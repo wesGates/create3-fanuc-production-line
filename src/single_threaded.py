@@ -19,7 +19,7 @@ class FanucSingle(Node):
     def __init__(self, namespace):
         super().__init__("robot")
 		
-		# Actions
+	# Actions
         self.cart_ac = ActionClient(self, CartPose, f'/{namespace}/cartesian_pose')
         self.joints_ac = ActionClient(self, JointPose, f'/{namespace}/joint_pose')
 		
@@ -27,12 +27,12 @@ class FanucSingle(Node):
         self.cart_ac.wait_for_server() # Wait till its ready
         cart_goal = CartPose.Goal() # Make Goal
         # Add all coordinates 
-        cart_goal.x = 110.77
-        cart_goal.y = 672.0
-        cart_goal.z = -102.75
-        cart_goal.w = 170.0
-        cart_goal.p = 0.0
-        cart_goal.r = 30.0
+        cart_goal.x = 447.6
+        cart_goal.y = 99.8
+        cart_goal.z = 43.0
+        cart_goal.w = 177.3
+        cart_goal.p = 2.4
+        cart_goal.r = -73.9
         # Send_goal is blocking
         self.cart_ac.send_goal(cart_goal)
 
@@ -41,12 +41,12 @@ class FanucSingle(Node):
         self.joints_ac.wait_for_server() # Wait till its ready
         joint_goal = JointPose.Goal() # Make Goal
         # Add all joints
-        joint_goal.joint1 = 90.0
-        joint_goal.joint2 = 18.0
-        joint_goal.joint3 = -41.0
-        joint_goal.joint4 = -2.0
-        joint_goal.joint5 = -48.0
-        joint_goal.joint6 = -148.0
+        joint_goal.joint1 = -7.6
+        joint_goal.joint2 = 35.4
+        joint_goal.joint3 = -48.5
+        joint_goal.joint4 = -169.0
+        joint_goal.joint5 = -18.5
+        joint_goal.joint6 = 114.2
         # send_goal_async is nonblocking and allows us to get feedback when in a single thread
         future = self.joints_ac.send_goal_async(joint_goal, feedback_callback=self.feedback_callback)
         future.add_done_callback(self.goal_response_callback) # This will run when the server accepts the goal 

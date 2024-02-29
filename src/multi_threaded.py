@@ -3,10 +3,10 @@ import rclpy
 from rclpy.node import Node
 from rclpy.action.client import ActionClient
 from rclpy.executors import MultiThreadedExecutor
-from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+#from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.qos import qos_profile_sensor_data
 # ROS message typing
-from std_msgs.msg import Bool
+from std_srvs.srv import Trigger
 
 import sys
 sys.path.append("../dependencies/")
@@ -27,7 +27,7 @@ class FanucTopic(Node):
         super().__init__("robotTopics")
 
         # Create a Service node for sending data to 'Main', could be a Topic also
-        self.srv = self.create_service(Bool, 'check_gripper', self.service_callback)
+        self.srv = self.create_service(Trigger, 'check_gripper', self.service_callback)
         
         # This subscribes to the Fanuc /grip_status topic
         self.subscriber_ = self.create_subscription(CurGripper, f'/{namespace}/grip_status', 
@@ -45,7 +45,7 @@ class FanucTopic(Node):
         """
         This will run when we send a service request
         """
-        response.data = self.curValue
+        response.message = str(self.curValue)
         return response
 
 
@@ -59,9 +59,10 @@ class FanucActions(Node):
         self.schunk_ac = ActionClient(self, SchunkGripper, f'/{namespace}/schunk_gripper')  
         
         # Sercice Client
-        self.service = self.create_client(Bool,'/check_gripper')
+        self.service = self.create_client(Trigger,'/check_gripper')
 
     def demo(self):
+        print("Moving Robot!")
         self.cart_ac.wait_for_server() # Wait till its ready
         cart_goal = CartPose.Goal() # Make Goal
         # Add all coordinates 
@@ -74,17 +75,19 @@ class FanucActions(Node):
         # Send_goal is blocking
         self.cart_ac.send_goal(cart_goal)
 
-        request = Bool.Request() # Make a request object
+        print("Reading current gripper...")
+        request = Trigger.Request() # Make a request object
         while not self.service.wait_for_service(timeout_sec=1.0):
             pass # Wait for service to be ready
-        result = self.service.call(request) # Send request and block until given a response
+        result = bool(self.service.call(request).message) # Send request and block until given a response
 
-        if(result.data == False): # If the grippers closed
+        print("Doing opposite of gripper state of", result)
+        if(result == False): # If the grippers closed
             self.schunk_ac.wait_for_server()
             schunk_goal = SchunkGripper.Goal()
             schunk_goal.command = 'open'
             self.schunk_ac.send_goal(schunk_goal)
-        else:
+        elif(result == True):
             self.schunk_ac.wait_for_server()
             schunk_goal = SchunkGripper.Goal()
             schunk_goal.command = 'close'
