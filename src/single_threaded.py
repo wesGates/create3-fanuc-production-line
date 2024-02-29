@@ -36,8 +36,6 @@ class FanucSingle(Node):
         # Send_goal is blocking
         self.cart_ac.send_goal(cart_goal)
 
-        # Joints
-        print("Running Joint test")
         self.joints_ac.wait_for_server() # Wait till its ready
         joint_goal = JointPose.Goal() # Make Goal
         # Add all joints

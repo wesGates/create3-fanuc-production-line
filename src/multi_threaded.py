@@ -79,15 +79,15 @@ class FanucActions(Node):
         request = Trigger.Request() # Make a request object
         while not self.service.wait_for_service(timeout_sec=1.0):
             pass # Wait for service to be ready
-        result = bool(self.service.call(request).message) # Send request and block until given a response
+        result = self.service.call(request).message # Send request and block until given a response
 
         print("Doing opposite of gripper state of", result)
-        if(result == False): # If the grippers closed
+        if(result == "False"): # If the grippers closed
             self.schunk_ac.wait_for_server()
             schunk_goal = SchunkGripper.Goal()
             schunk_goal.command = 'open'
             self.schunk_ac.send_goal(schunk_goal)
-        elif(result == True):
+        elif(result == "True"):
             self.schunk_ac.wait_for_server()
             schunk_goal = SchunkGripper.Goal()
             schunk_goal.command = 'close'
