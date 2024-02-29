@@ -66,12 +66,12 @@ class FanucActions(Node):
         self.cart_ac.wait_for_server() # Wait till its ready
         cart_goal = CartPose.Goal() # Make Goal
         # Add all coordinates 
-        cart_goal.x = 110.77
-        cart_goal.y = 672.0
-        cart_goal.z = -102.75
-        cart_goal.w = 170.0
-        cart_goal.p = 0.0
-        cart_goal.r = 30.0
+        cart_goal.x = 542.5
+        cart_goal.y = -64.9
+        cart_goal.z = -2.8
+        cart_goal.w = -179.1
+        cart_goal.p = 9.0
+        cart_goal.r = -155.0
         # Send_goal is blocking
         self.cart_ac.send_goal(cart_goal)
 
