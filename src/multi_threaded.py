@@ -2,14 +2,17 @@
 import rclpy
 from rclpy.node import Node
 from rclpy.action.client import ActionClient
+from rclpy.executors import MultiThreadedExecutor
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+from rclpy.qos import qos_profile_sensor_data
+# ROS message typing
+from std_msgs.msg import Bool
 
 import sys
 sys.path.append("../dependencies/")
 # This is important for running your nodes from the terminal
 from pynput.keyboard import KeyCode
 from key_commander import KeyCommander
-
-from time import sleep
 
 # Fanuc packages
 import fanuc_interfaces
@@ -18,13 +21,46 @@ from fanuc_interfaces.msg import CurGripper
 
 namespace = 'bunsen'
 
+# Node that listens to the fanuc topic
+class FanucTopic(Node):
+    def __init__(self, namespace):
+        super().__init__("robotTopics")
+
+        # Create a Service node for sending data to 'Main', could be a Topic also
+        self.srv = self.create_service(Bool, 'check_gripper', self.service_callback)
+        
+        # This subscribes to the Fanuc /grip_status topic
+        self.subscriber_ = self.create_subscription(CurGripper, f'/{namespace}/grip_status', 
+            self.listener, qos_profile_sensor_data)
+        # This will hold the current value from the Fanuc topic
+        self.curValue = False # Temporary default value
+        
+    def listener(self, msg):
+        """
+        This will be called everytime the subscriber recieves a new message from the topic
+        """
+        self.curValue = msg.open
+    	
+    def service_callback(self, request, response):
+        """
+        This will run when we send a service request
+        """
+        response.data = self.curValue
+        return response
+
+
+# 'Main' node
 class FanucActions(Node):
     def __init__(self, namespace):
-        super().__init__("robot")
-		
-		# Actions
+        super().__init__("robotActions")
+
+		# Actions, note their callback groups
         self.cart_ac = ActionClient(self, CartPose, f'/{namespace}/cartesian_pose')
-		
+        self.schunk_ac = ActionClient(self, SchunkGripper, f'/{namespace}/schunk_gripper')  
+        
+        # Sercice Client
+        self.service = self.create_client(Bool,'/check_gripper')
+
     def demo(self):
         self.cart_ac.wait_for_server() # Wait till its ready
         cart_goal = CartPose.Goal() # Make Goal
@@ -38,52 +74,39 @@ class FanucActions(Node):
         # Send_goal is blocking
         self.cart_ac.send_goal(cart_goal)
 
-        # Joints
-        print("Running Joint test")
-        self.joints_ac.wait_for_server() # Wait till its ready
-        joint_goal = JointPose.Goal() # Make Goal
-        # Add all joints
-        joint_goal.joint1 = 90.0
-        joint_goal.joint2 = 18.0
-        joint_goal.joint3 = -41.0
-        joint_goal.joint4 = -2.0
-        joint_goal.joint5 = -48.0
-        joint_goal.joint6 = -148.0
-        # send_goal_async is nonblocking and allows us to get feedback when in a single thread
-        future = self.joints_ac.send_goal_async(joint_goal, feedback_callback=self.feedback_callback)
-        future.add_done_callback(self.goal_response_callback) # This will run when the server accepts the goal 
+        request = Bool.Request() # Make a request object
+        while not self.service.wait_for_service(timeout_sec=1.0):
+            pass # Wait for service to be ready
+        result = self.service.call(request) # Send request and block until given a response
 
-#------- Helper functions -------------
-    def goal_response_callback(self, future):
-        goal_handle = future.result()
-        if not goal_handle.accepted:
-            self.get_logger().info('Goal rejected')
-            return
-
-        self.get_logger().info('Goal accepted')
-
-        self._get_result_future = goal_handle.get_result_async()
-        self._get_result_future.add_done_callback(self.get_result_callback) # This will run when the goal is done
-
-    def get_result_callback(self, future):
-        result = future.result().result
-        self.get_logger().info('Result: {0}'.format(result.success))
-
-    def feedback_callback(self, feedback_msg): # This function will run when feedback is recieved from the server
-        feedback = feedback_msg.feedback
-        self.get_logger().info('Received feedback: {0}'.format(feedback.distance_left))
+        if(result.data == False): # If the grippers closed
+            self.schunk_ac.wait_for_server()
+            schunk_goal = SchunkGripper.Goal()
+            schunk_goal.command = 'open'
+            self.schunk_ac.send_goal(schunk_goal)
+        else:
+            self.schunk_ac.wait_for_server()
+            schunk_goal = SchunkGripper.Goal()
+            schunk_goal.command = 'close'
+            self.schunk_ac.send_goal(schunk_goal)
 
 
 
 if __name__ == '__main__':
     rclpy.init()
-	
-    fanuc = FanucActions
-(namespace)
+    # Create our 2 nodes
+    main = FanucActions(namespace)
+    listener = FanucTopic(namespace)
+
+    exec = MultiThreadedExecutor(2) # Give it 2 threads for 2 nodes
+    # Add our nodes
+    exec.add_node(main)
+    exec.add_node(listener)
+    
     # This allows us to start the function once the node is spinning
     keycom = KeyCommander([
-		(KeyCode(char='s'), fanuc.demo),
+		(KeyCode(char='s'), main.demo),
 		])
     print("S")
-    rclpy.spin(fanuc) # Start executing the node
+    exec.spin() # Start executing the nodes
     rclpy.shutdown()

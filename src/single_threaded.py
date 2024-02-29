@@ -9,8 +9,6 @@ sys.path.append("../dependencies/")
 from pynput.keyboard import KeyCode
 from key_commander import KeyCommander
 
-from time import sleep
-
 # Fanuc packages
 import fanuc_interfaces
 from fanuc_interfaces.action import CartPose, JointPose
