@@ -9,26 +9,28 @@ sys.path.append("../dependencies/")
 from pynput.keyboard import KeyCode
 
 import my_interfaces
-from my_interfaces.msg import Num, Base2status, Base3status   # CHANGE
+from my_interfaces.msg import ReadyStatus, Num, Base2status, Base3status   # CHANGE
 
-# Subscriber is placed in the robot's main code.
 
-class Base2Subscriber(Node):
+namespace = 'create3-05AE'
 
-    def __init__(self):
+class ReadyStatusSubscriber(Node):
+
+    def __init__(self, namespace):
         super().__init__('base2_subscriber')
-        self.base2_subscription_ = self.create_subscription(Base2status, 'topic', self.listener_callback, 10)
+        self.base2_subscription_ = self.create_subscription(ReadyStatus, 'robot_ready_status', self.listener_callback, 10)
 
     def listener_callback(self, msg):
             self.get_logger().info('I heard roomba status: "%d"' % msg.roomba) # CHANGE
             self.get_logger().info('I heard beaker status: "%d"' % msg.beaker) # CHANGE
+            self.get_logger().info('I heard beaker status: "%d"' % msg.bunsen) # CHANGE
             print("\n")
 
 
 def main(args=None):
     rclpy.init(args=args)
 
-    base2_subscriber = Base2Subscriber()
+    base2_subscriber = ReadyStatusSubscriber(namespace)
 
     rclpy.spin(base2_subscriber)
 

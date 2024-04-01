@@ -18,6 +18,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Sphere.msg"
   "msg/Base2status.msg"
   "msg/Base3status.msg"
+  "msg/ReadyStatus.msg"
   "srv/AddThreeInts.srv"
   DEPENDENCIES geometry_msgs # Add packages that above messages depend on, in this case geometry_msgs for Sphere.msg
   DEPENDENCIES std_msgs
