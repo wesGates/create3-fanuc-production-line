@@ -12,6 +12,7 @@ import my_interfaces
 from my_interfaces.msg import Num   # CHANGE
 
 
+
 class MinimalPublisher(Node):
 
     def __init__(self):
