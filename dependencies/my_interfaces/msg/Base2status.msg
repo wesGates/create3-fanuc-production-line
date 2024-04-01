@@ -1,0 +1,2 @@
+bool roomba
+bool beaker
