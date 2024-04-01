@@ -11,43 +11,28 @@ from pynput.keyboard import KeyCode
 import my_interfaces
 from my_interfaces.msg import Num, Base2status, Base3status   # CHANGE
 
+# Subscriber is placed in the robot's main code.
 
-class MinimalSubscriber(Node):
+class Base2Subscriber(Node):
 
     def __init__(self):
-        super().__init__('minimal_subscriber')
-        self.subscription = self.create_subscription(
-            Base2status,                                              # CHANGE
-            'topic',
-            self.listener_callback,
-            10)
-        self.subscription
+        super().__init__('base2_subscriber')
+        self.base2_subscription_ = self.create_subscription(Base2status, 'topic', self.listener_callback, 10)
 
     def listener_callback(self, msg):
             self.get_logger().info('I heard roomba status: "%d"' % msg.roomba) # CHANGE
             self.get_logger().info('I heard beaker status: "%d"' % msg.beaker) # CHANGE
-
-    # def __init__(self):
-    #     super().__init__('minimal_subscriber')
-    #     self.subscription = self.create_subscription(
-    #         Num,                                              # CHANGE
-    #         'topic',
-    #         self.listener_callback,
-    #         10)
-    #     self.subscription
-
-    # def listener_callback(self, msg):
-    #         self.get_logger().info('I heard roomba status: "%d"' % msg.Num) # CHANGE
+            print("\n")
 
 
 def main(args=None):
     rclpy.init(args=args)
 
-    minimal_subscriber = MinimalSubscriber()
+    base2_subscriber = Base2Subscriber()
 
-    rclpy.spin(minimal_subscriber)
+    rclpy.spin(base2_subscriber)
 
-    minimal_subscriber.destroy_node()
+    base2_subscriber.destroy_node()
     rclpy.shutdown()
 
 

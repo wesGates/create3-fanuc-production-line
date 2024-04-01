@@ -12,43 +12,46 @@ import my_interfaces
 from my_interfaces.msg import Num, Base2status, Base3status   # CHANGE
 
 
-class MinimalPublisher(Node):
+class Base2Publisher(Node):
 
     def __init__(self):
-        super().__init__('minimal_publisher')
-        self.publisher_ = self.create_publisher(Base2status, 'topic', 10)     # CHANGE
-        timer_period = 0.5
+        super().__init__('base2_publisher')
+        self.base2_publisher_ = self.create_publisher(Base2status, 'topic', 10)     # CHANGE
+        timer_period = 1.0
         self.timer = self.create_timer(timer_period, self.timer_callback)
+
+        # Initialize variables
+        self.roomba = False
+        self.beaker = False
+
 
     def timer_callback(self):
         msg = Base2status()                                           # CHANGE
-        self.publisher_.publish(msg)
-        self.get_logger().info('Publishing roomba status: "%d"' % msg.roomba)  # CHANGE
-        self.get_logger().info('Publishing beaker status: "%d"' % msg.beaker)  # CHANGE
+        msg.roomba = self.roomba
+        msg.beaker = self.beaker
+        print("roomba status: ", msg.roomba)
+        print("beaker status: ", msg.beaker)
 
-    # def __init__(self):
-    #     super().__init__('minimal_publisher')
-    #     self.publisher_ = self.create_publisher(Num, 'topic', 10)     # CHANGE
-    #     timer_period = 0.5
-    #     self.timer = self.create_timer(timer_period, self.timer_callback)
-    #     self.i = 0
+        # Publish the message
+        self.base2_publisher_.publish(msg)
+        print("\n")
 
-    # def timer_callback(self):
-    #     msg = Num()                                           # CHANGE
-    #     msg.num = self.i                                      # CHANGE
-    #     self.publisher_.publish(msg)
-    #     self.get_logger().info('Publishing: "%d"' % msg.num)  # CHANGE
-    #     self.i += 1
+        # self.get_logger().info('Publishing roomba status: "%d"' % msg.roomba)  # CHANGE
+        # self.get_logger().info('Publishing beaker status: "%d"' % msg.beaker)  # CHANGE
+
+
+    # def status_updater(self):
+    #     print(msg.roomba)
 
 
 def main(args=None):
     rclpy.init(args=args)
 
-    minimal_publisher = MinimalPublisher()
+    base2_publisher = Base2Publisher()
 
-    rclpy.spin(minimal_publisher)
+    rclpy.spin(base2_publisher)
 
-    minimal_publisher.destroy_node()
+    base2_publisher.destroy_node()
     rclpy.shutdown()
 
 
