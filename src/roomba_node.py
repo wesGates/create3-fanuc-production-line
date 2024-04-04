@@ -35,12 +35,12 @@ class RoombaNode(Node):
 															 self.ready_status_callback, 10)
 
 		# Initializing variables to store data received from other nodes
-        # These variables are updated in the callback functions.
+		# These variables are updated in the callback functions.
 		self.latest_ready_status = None
 
 	def ready_status_callback(self, msg):
 		# Update the latest ready statuses with the message received from the 'robot_ready_status' topic
-		print("I heard...")
+		print("Start of RoombaNode callback...")
 		self.latest_ready_status = msg
 		self.roomba_status = self.latest_ready_status.roomba
 
@@ -53,11 +53,29 @@ class RoombaNode(Node):
 		print("End of RoombaNode callback \n")
 
 
-	def listener_callback(self, msg):
-			self.get_logger().info('I heard roomba status: "%d"' % msg.roomba) # CHANGE
-			self.get_logger().info('I heard beaker status: "%d"' % msg.beaker) # CHANGE
-			self.get_logger().info('I heard beaker status: "%d"' % msg.bunsen) # CHANGE
-			print("\n")
+	def wait_for_all_ready(self):
+		timeout = 30  # seconds
+		check_interval = 2  # seconds
+		start_time = time.time()
+
+		while time.time() - start_time < timeout:
+			# Publish the status to trigger an update
+			self.ready_status.publish_ready_status()
+			print("Roomba status from within the wait_for_all_ready fun: ", self.latest_ready_status.roomba)
+
+			# Wait a short time for the message to be published and processed
+			rclpy.spin_once(self, timeout_sec=check_interval)
+			time.sleep(1.0)
+
+			# Check the latest status
+			if self.latest_ready_status and self.latest_ready_status.roomba and self.latest_ready_status.beaker:
+				print("Both Roomba and Beaker are ready!")
+				# !!!! Perhaps reset the ready statuses of both robots to false?
+				return
+			else:
+				print("Waiting for both Roomba and Beaker to be ready...")
+
+		print("Timeout reached without both robots being ready.")
 
 
 	def main(self):
@@ -73,9 +91,17 @@ class RoombaNode(Node):
 			print("\n")
 			time.sleep(1.0)
 			
-			print("Step 3: Re-publish the hopefully altered statuses")
+			print("Step 3: Publish ready statuses to view the changes")
 			self.ready_status.publish_ready_status()
 			print("\n")
+
+
+			print("Step 4: Access the robot statuses in a function that halts everything until all statuses are true")
+			self.wait_for_all_ready()
+			print("\n")
+
+			print("Step 5: If the process is halted, I won't see this message.")
+
 		except Exception as error:
 			self.get_logger().error(f"Error in main: {error}") # Error logging
 
