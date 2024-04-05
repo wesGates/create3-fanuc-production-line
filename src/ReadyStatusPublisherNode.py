@@ -58,7 +58,7 @@ class ReadyStatusPublisherNode(Node):
 		with open(self.status_file_path, 'r') as file:
 			statuses = file.read().strip().split(',')
 
-		print("STATUS BEFORE WRITE")
+		print("DEBUG: STATUS BEFORE WRITE")
 		print(statuses)
 
 		# Update statuses based on the input parameters
@@ -72,5 +72,5 @@ class ReadyStatusPublisherNode(Node):
 		with open(self.status_file_path, 'w') as file:
 			file.write(','.join(statuses) + '\n')
 
-		print("STATUS AFTER WRITE")
+		print("DEBUG: STATUS AFTER WRITE")
 		print(statuses)

@@ -23,7 +23,7 @@ ready_status_publisher_node = ReadyStatusPublisherNode()
 
 
 class RoombaNode(Node):
-	"""TODO: Determine if/how 'namespace' is important. """
+
 
 	def __init__(self):
 		super().__init__('roomba_node')
@@ -37,6 +37,7 @@ class RoombaNode(Node):
 		# Initializing status variables to store the 'ready' data received from the publisher
 		# These variables are updated in the callback functions.
 		self.latest_ready_status = None
+
 
 	def ready_status_callback(self, msg):
 		"""
@@ -58,15 +59,52 @@ class RoombaNode(Node):
 		print("End of RoombaNode callback \n")
 
 
+
+
 	def wait_for_base2_ready(self):
+			"""
+			This function waits until the status of both the roomba, and beaker is True.
+			Variations of this function will be placed in both RoombaNode and BeakerNode.
+			NOTE: The robot that calls this function must first set their status to True, or it will time out.
+			"""
+			
+			# ! Temporarily placing this here for testing with wait_for_base2_ready from the beaker node
+			self.set_roomba_true()
+
+			print("Waiting for ready: roomba and beaker. ")
+			timeout = 100  # seconds
+			check_interval = 2  # seconds
+			start_time = time.time()
+
+			while time.time() - start_time < timeout:
+
+				# Publish the status to trigger an update
+				self.ready_status_publisher_node.publish_ready_status()
+				print("Check latest ready statuses: ", self.latest_ready_status)
+
+				# Wait a short time for the message to be published and processed
+				rclpy.spin_once(self, timeout_sec=check_interval)
+				time.sleep(1.0)
+
+				# Check the latest status
+				if self.latest_ready_status and self.latest_ready_status.roomba and self.latest_ready_status.beaker:
+					print("\n !!! Both Roomba and Beaker are ready for dice block handoff at base2 !!!!")
+					return
+				else:
+					print("\nWaiting for both Roomba and Beaker to be ready at base2...")
+
+			print("Timeout reached without both robots being ready for dice block handoff.")
+
+
+	def wait_for_base2_block_pickup(self):
 		"""
-		This function waits until the status of both the roomba, and beaker is True.
-		This function will be placed in both RoombaNode and BeakerNode.
-		NOTE: The robot that calls this function must first set their status to True, or it will time out.
+		After the robots are ready, the roomba will wait until beaker is set it false (after the dice block is retrieved)
 		"""
-		
-		print("Waiting for ready: roomba and beaker. ")
-		timeout = 10  # seconds
+		# ! Temporarily placing this here for testing with wait_for_base2_ready from the beaker node
+		self.set_roomba_true()
+
+		print("\nWaiting for beaker to pick up dice block.")
+		timeout = 100  # seconds
 		check_interval = 2  # seconds
 		start_time = time.time()
 
@@ -81,17 +119,123 @@ class RoombaNode(Node):
 			time.sleep(1.0)
 
 			# Check the latest status
-			if self.latest_ready_status and self.latest_ready_status.roomba and self.latest_ready_status.beaker:
-				print("!!! Both Roomba and Beaker are ready!!!!")
+			if self.latest_ready_status and not self.latest_ready_status.beaker:
+				print("!!! Beaker has retrieved the dice block !!!!")
 				# !!!! Perhaps reset the ready statuses of both robots to false?
 				return
 			else:
-				print("Waiting for both Roomba and Beaker to be ready...")
+				print("Waiting for Beaker to set status to false...")
 
-		print("Timeout reached without both robots being ready.")
+		print("Timeout reached without communicating dice block pickup.")
 
-	def dice_block_handoff(self):
-		""" Logic for docking the roomba, waiting for beaker to be ready, then doing the next action or something"""
+
+	def dice_block_handoff_base2(self):
+		""" 
+		Post-docking logic for the roomba. 
+		"""
+
+		# After a succesful dock, set roomba to true
+		self.set_roomba_true()
+
+		# Wait until beaker has its status set to true
+		self.wait_for_base2_ready()
+
+		# After both robots are ready, wait for beaker to pick up the dice block
+		# NOTE: beaker should set its status to false after it has picked up the dice block
+		print("Wait for beaker to set its status to false before moving to base3. ")
+		self.wait_for_base2_block_pickup()
+
+		# After beaker is false, reset roomba status and contine the roomba's navigation
+		self.set_roomba_false()
+		print("Moving to base 3")
+		print("Specific driving actions go here")
+
+
+
+
+	def wait_for_base3_ready(self):
+			"""
+			This function waits until the status of both the roomba, and bunsen is True.
+			Variations of this function will be placed in both RoombaNode and bunsenNode.
+			NOTE: The robot that calls this function must first set their status to True, or it will time out.
+			"""
+			
+			print("Waiting for ready: roomba and bunsen. ")
+			timeout = 100  # seconds
+			check_interval = 2  # seconds
+			start_time = time.time()
+
+			while time.time() - start_time < timeout:
+
+				# Publish the status to trigger an update
+				self.ready_status_publisher_node.publish_ready_status()
+				print("Check latest ready statuses: ", self.latest_ready_status)
+
+				# Wait a short time for the message to be published and processed
+				rclpy.spin_once(self, timeout_sec=check_interval)
+				time.sleep(1.0)
+
+				# Check the latest status
+				if self.latest_ready_status and self.latest_ready_status.roomba and self.latest_ready_status.bunsen:
+					print("\n !!! Both Roomba and bunsen are ready for dice block handoff at base3 !!!!")
+					return
+				else:
+					print("Waiting for both Roomba and bunsen to be ready at base3...")
+
+			print("Timeout reached without both robots being ready for dice block handoff.")
+
+
+	def wait_for_base3_block_pickup(self):
+		"""
+		After the robots are ready, the roomba will wait until bunsen is set it false (after the dice block is retrieved)
+		"""
+		print("\nWaiting for bunsen to pick up dice block.")
+		timeout = 100  # seconds
+		check_interval = 2  # seconds
+		start_time = time.time()
+
+		while time.time() - start_time < timeout:
+
+			# Publish the status to trigger an update
+			self.ready_status_publisher_node.publish_ready_status()
+			print("Check latest ready statuses: ", self.latest_ready_status)
+
+			# Wait a short time for the message to be published and processed
+			rclpy.spin_once(self, timeout_sec=check_interval)
+			time.sleep(1.0)
+
+			# Check the latest status
+			if self.latest_ready_status and not self.latest_ready_status.bunsen:
+				print("!!! bunsen has retrieved the dice block !!!!")
+				# !!!! Perhaps reset the ready statuses of both robots to false?
+				return
+			else:
+				print("Waiting for bunsen to set status to false...")
+
+		print("Timeout reached without communicating dice block pickup.")
+
+
+	def dice_block_handoff_base3(self):
+		""" 
+		Post-docking logic for the roomba. 
+		"""
+
+		# After a succesful dock, set roomba to true
+		self.set_roomba_true()
+
+		# Wait until bunsen has its status set to true
+		self.wait_for_base3_ready()
+
+		# After both robots are ready, wait for bunsen to pick up the dice block
+		# NOTE: bunsen should set its status to false after it has picked up the dice block
+		print("Wait for bunsen to set its status to false before moving to base3. ")
+		self.wait_for_base3_block_pickup()
+
+		# After bunsen is false, reset roomba status and contine the roomba's navigation
+		self.set_roomba_false()
+		print("Moving to base 3")
+		print("Specific driving actions go here")
+
 
 
 	def display_robot_statuses(self):
@@ -110,6 +254,7 @@ class RoombaNode(Node):
 
 	def set_roomba_false(self):
 		try: 
+			print("Resetting ROOMBA to False")
 			self.ready_status_publisher_node.set_ready_status(roomba_status=False)
 		except:
 			self.get_logger().error(f"Error in display: {error}") # Error logging
@@ -119,6 +264,7 @@ class RoombaNode(Node):
 		print("Navigation code goes here. ")
 
 
+# The following Key Commander is used for manually checking outputs in the terminal
 if __name__ == '__main__':
 	# rclpy.init()
 
@@ -136,12 +282,16 @@ if __name__ == '__main__':
 		(KeyCode(char='t'), roomba.set_roomba_true),
 		(KeyCode(char='f'), roomba.set_roomba_false),
 		(KeyCode(char='w'), roomba.wait_for_base2_ready),
+		(KeyCode(char='2'), roomba.dice_block_handoff_base2),
+		(KeyCode(char='3'), roomba.dice_block_handoff_base3),
 	])
 	print(" Press 'u' to intitiate main routine") # This will be the navigation code
 	print(" Press 'd' to display all robot states in the text file")
 	print(" Press 't' to set the roomba's status as 'True'")
 	print(" Press 'f' to set the roomba's status as 'False'")
-	print(" Press 'w' to wait for all statuses to be true before continuing'")
+	print(" Press 'w' to wait for select statuses to be true before continuing'")
+	print(" Press '2' to initiate dice block handoff routine at base2")
+	print(" Press '3' to initiate dice block handoff routine at base3")
 
 	try:
 		exec.spin()  # execute Roomba callbacks until shutdown or destroy is called
