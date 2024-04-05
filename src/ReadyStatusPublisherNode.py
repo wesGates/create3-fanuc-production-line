@@ -9,28 +9,18 @@ from my_interfaces.msg import ReadyStatus
 
 
 class ReadyStatusPublisherNode(Node):
-	# Initialization and other methods remain unchanged
+	""" Initialization and other methods remain unchanged from RoombaNode"""
 
 
 	def __init__(self):
 		super().__init__('ready_status_publisher')
 		self.ready_status_publisher_ = self.create_publisher(ReadyStatus, 'robot_ready_status', 10)
 		self.status_file_path = 'robot_status.txt'
-		self.initialize_status_file()
-
-
-	def initialize_status_file(self):
-		"""
-		Initialize the status file with default boolean values for Roomba, Beaker, and Bunsen.
-		The order is Roomba, Beaker, Bunsen.
-		"""
-		with open(self.status_file_path, 'w') as file:
-			file.write("False,False,False\n")
 
 
 	def publish_ready_status(self):
 		"""
-		Publish the status of robots by reading their statuses from the status file.
+		Publish the status of robots by reading their statuses from the robot_status.txt file.
 		The order is Roomba, Beaker, Bunsen.
 		"""
 		print("\nPublishing ready statuses...")
