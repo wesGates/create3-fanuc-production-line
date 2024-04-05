@@ -34,11 +34,31 @@ class RoombaNode(Node):
 		self.ready_status_subscription_ = self.create_subscription(ReadyStatus, 'robot_ready_status', 
 															 self.ready_status_callback, 10)
 
-		# Initializing status variables to store the 'ready' data received from the publisher
-		# These variables are updated in the callback functions.
+		# Initialize the variable that stores the robot ready status information
+		# Ready statuses are updated in the callback functions.
 		self.latest_ready_status = None
 
 
+	def display_robot_statuses(self):
+		try: 
+			self.ready_status_publisher_node.display_robot_statuses()
+		except:
+			self.get_logger().error(f"Error in display: {error}") # Error logging
+
+
+	def set_roomba_true(self):
+		try: 
+			self.ready_status_publisher_node.set_ready_status(roomba_status=True)
+		except:
+			self.get_logger().error(f"Error in display: {error}") # Error logging
+
+
+	def set_roomba_false(self):
+		try: 
+			print("Resetting ROOMBA to False")
+			self.ready_status_publisher_node.set_ready_status(roomba_status=False)
+		except:
+			self.get_logger().error(f"Error in display: {error}") # Error logging
 	def ready_status_callback(self, msg):
 		"""
 		The other nodes don't have this function, yet. 
@@ -59,16 +79,16 @@ class RoombaNode(Node):
 		print("End of RoombaNode callback \n")
 
 
-
-
 	def wait_for_base2_ready(self):
 			"""
-			This function waits until the status of both the roomba, and beaker is True.
-			Variations of this function will be placed in both RoombaNode and BeakerNode.
-			NOTE: The robot that calls this function must first set their status to True, or it will time out.
+			This function...
+			1. Continuously asks the publisher to publish the current robot_status.txt contents
+			2. Halts further actions until the statuses of both the roomba and beaker are True.
+			
+			NOTE: Variations of this function will be placed in RoombaNode, BeakerNode, and BunsenNode.
+			NOTE: To avoid timeout, it is important that the robot calling this function has set its ready state to True beforehand.
 			"""
 			
-			# ! Temporarily placing this here for testing with wait_for_base2_ready from the beaker node
 			self.set_roomba_true()
 
 			print("Waiting for ready: roomba and beaker. ")
@@ -79,8 +99,8 @@ class RoombaNode(Node):
 			while time.time() - start_time < timeout:
 
 				# Publish the status to trigger an update
+				# This will update all robot's self.latest_ready_status varriables
 				self.ready_status_publisher_node.publish_ready_status()
-				print("Check latest ready statuses: ", self.latest_ready_status)
 
 				# Wait a short time for the message to be published and processed
 				rclpy.spin_once(self, timeout_sec=check_interval)
@@ -91,7 +111,7 @@ class RoombaNode(Node):
 					print("\n !!! Both Roomba and Beaker are ready for dice block handoff at base2 !!!!")
 					return
 				else:
-					print("\nWaiting for both Roomba and Beaker to be ready at base2...")
+					print("\n Waiting for both Roomba and Beaker to be ready at base2...")
 
 			print("Timeout reached without both robots being ready for dice block handoff.")
 
@@ -100,8 +120,8 @@ class RoombaNode(Node):
 		"""
 		After the robots are ready, the roomba will wait until beaker is set it false (after the dice block is retrieved)
 		"""
-		# ! Temporarily placing this here for testing with wait_for_base2_ready from the beaker node
-		self.set_roomba_true()
+		# # ! Temporarily placing this here for testing with wait_for_base2_ready from the beaker node
+		# self.set_roomba_true()
 
 		print("\nWaiting for beaker to pick up dice block.")
 		timeout = 100  # seconds
@@ -147,19 +167,14 @@ class RoombaNode(Node):
 
 		# After beaker is false, reset roomba status and contine the roomba's navigation
 		self.set_roomba_false()
-		print("Moving to base 3")
-		print("Specific driving actions go here")
-
-
+		print("Specific driving actions occurr here")
 
 
 	def wait_for_base3_ready(self):
 			"""
-			This function waits until the status of both the roomba, and bunsen is True.
-			Variations of this function will be placed in both RoombaNode and bunsenNode.
-			NOTE: The robot that calls this function must first set their status to True, or it will time out.
+			This function shares the same purpose as wait_for_base2_ready()this function has set its ready state to True beforehand.
 			"""
-			
+						
 			print("Waiting for ready: roomba and bunsen. ")
 			timeout = 100  # seconds
 			check_interval = 2  # seconds
@@ -169,7 +184,7 @@ class RoombaNode(Node):
 
 				# Publish the status to trigger an update
 				self.ready_status_publisher_node.publish_ready_status()
-				print("Check latest ready statuses: ", self.latest_ready_status)
+				# print("Show latest ready statuses within wait_for_base_ready: ", self.latest_ready_status)
 
 				# Wait a short time for the message to be published and processed
 				rclpy.spin_once(self, timeout_sec=check_interval)
@@ -235,29 +250,6 @@ class RoombaNode(Node):
 		self.set_roomba_false()
 		print("Moving to base 3")
 		print("Specific driving actions go here")
-
-
-
-	def display_robot_statuses(self):
-		try: 
-			self.ready_status_publisher_node.display_robot_statuses()
-		except:
-			self.get_logger().error(f"Error in display: {error}") # Error logging
-
-
-	def set_roomba_true(self):
-		try: 
-			self.ready_status_publisher_node.set_ready_status(roomba_status=True)
-		except:
-			self.get_logger().error(f"Error in display: {error}") # Error logging
-
-
-	def set_roomba_false(self):
-		try: 
-			print("Resetting ROOMBA to False")
-			self.ready_status_publisher_node.set_ready_status(roomba_status=False)
-		except:
-			self.get_logger().error(f"Error in display: {error}") # Error logging
 
 
 	def main(self):

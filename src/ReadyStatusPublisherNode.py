@@ -23,7 +23,7 @@ class ReadyStatusPublisherNode(Node):
 		Publish the status of robots by reading their statuses from the robot_status.txt file.
 		The order is Roomba, Beaker, Bunsen.
 		"""
-		print("\nPublishing ready statuses...")
+		print("\n Publisher is publishing ready statuses...")
 
 		with open(self.status_file_path, 'r') as file:
 			statuses = file.read().strip().split(',')
@@ -36,7 +36,8 @@ class ReadyStatusPublisherNode(Node):
 
 		# Publishing the message
 		self.ready_status_publisher_.publish(msg)
-		print(f"Published statuses - Roomba: {msg.roomba}, Beaker: {msg.beaker}, Bunsen: {msg.bunsen}")
+
+		# print(f"DEBUGGING: Published statuses - Roomba: {msg.roomba}, Beaker: {msg.beaker}, Bunsen: {msg.bunsen}")
 
 		
 	def display_robot_statuses(self):
@@ -58,8 +59,8 @@ class ReadyStatusPublisherNode(Node):
 		with open(self.status_file_path, 'r') as file:
 			statuses = file.read().strip().split(',')
 
-		print("DEBUG: STATUS BEFORE WRITE")
-		print(statuses)
+		# print("DEBUG: STATUS BEFORE WRITE")
+		# print(statuses)
 
 		# Update statuses based on the input parameters
 		if roomba_status is not None:
@@ -72,5 +73,5 @@ class ReadyStatusPublisherNode(Node):
 		with open(self.status_file_path, 'w') as file:
 			file.write(','.join(statuses) + '\n')
 
-		print("DEBUG: STATUS AFTER WRITE")
-		print(statuses)
+		# print("DEBUG: STATUS AFTER WRITE")
+		# print(statuses)
