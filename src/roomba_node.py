@@ -20,6 +20,7 @@ rclpy.init()
 namespace = 'create3_05AE'
 ready_status_publisher_node = ReadyStatusPublisherNode()
 
+
 class RoombaNode(Node):
 
 	# def __init__(self, namespace):
@@ -54,8 +55,8 @@ class RoombaNode(Node):
 
 
 	def wait_for_all_ready(self):
-		timeout = 30  # seconds
-		check_interval = 2  # seconds
+		timeout = 100000  # seconds
+		check_interval = 5  # seconds
 		start_time = time.time()
 
 		while time.time() - start_time < timeout:
@@ -80,31 +81,63 @@ class RoombaNode(Node):
 
 	def main(self):
 		try:
-			print("\nStep 1: Get the publisher to publish on command and access the information. ")
+			print("\nStep 1: Get the publisher to publish on command and access the current robot statuses. ")
 			self.ready_status.publish_ready_status()
 			print("\n")
 			time.sleep(1.0)
 
 
-			print("Step 2: Change the status of a variable")
+			print("Step 2: Change the status of a robot")
 			self.ready_status.set_ready_status(roomba_status=True)
 			print("\n")
 			time.sleep(1.0)
 			
-			print("Step 3: Publish ready statuses to view the changes")
+			print("Step 3: Publish the ready statuses to view the changes")
 			self.ready_status.publish_ready_status()
 			print("\n")
 
 
-			print("Step 4: Access the robot statuses in a function that halts everything until all statuses are true")
+			print("Step 4: Check the robot statuses in a function that halts the process until all relevant statuses are true")
 			self.wait_for_all_ready()
 			print("\n")
 
-			print("Step 5: If the process is halted, I won't see this message.")
+			print("Step 5: If the process is halted, I won't see this message until it times out.")
 
 		except Exception as error:
 			self.get_logger().error(f"Error in main: {error}") # Error logging
 
+	def main1(self):
+		try:
+			print("Step 0: Initialize the status text file")
+			self.ready_status.initialize_status_file()
+			print("Read the text file contents:")
+			self.ready_status.display_robot_statuses()
+
+
+			print("\nStep 1: Get the publisher to publish on command and access the current robot statuses. ")
+			self.ready_status.publish_ready_status()
+			print("\n")
+			time.sleep(1.0)
+
+
+			print("Step 2: Change the status of a robot")
+			self.ready_status.set_ready_status(roomba_status=True)
+			print("\n")
+			time.sleep(1.0)
+			
+			print("Step 3: Publish the ready statuses to view the changes")
+			self.ready_status.publish_ready_status()
+			print("\n")
+
+
+			print("Step 4: Check the robot statuses in a function that halts the process until all relevant statuses are true")
+			self.wait_for_all_ready()
+			print("\n")
+
+			print("Step 5: If the process is halted, I won't see this message until it times out.")
+
+		except Exception as error:
+			self.get_logger().error(f"Error in main: {error}") # Error logging
 
 
 if __name__ == '__main__':
@@ -119,7 +152,7 @@ if __name__ == '__main__':
 	time.sleep(1.0)
 	
 	keycom = KeyCommander([
-		(KeyCode(char='u'), roomba.main),
+		(KeyCode(char='u'), roomba.main1),
 	])
 	print(" Press 'U' to intitiate routine")
 

@@ -86,13 +86,7 @@ class ReadyStatusSubscriber(Node):
 if __name__ == '__main__':
 	# rclpy.init()
 
-
 	ready_status_publisher = ReadyStatusPublisher()
-
-
-
-
-
 
 	ready_status_subscriber = ReadyStatusSubscriber()
 	exec = MultiThreadedExecutor(8)

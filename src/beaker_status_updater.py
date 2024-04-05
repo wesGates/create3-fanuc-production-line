@@ -21,6 +21,7 @@ import time
 
 from my_interfaces.msg import ReadyStatus  # Adjust the import path based on your package structure
 
+namespace = "beaker"
 
 class BeakerStatusUpdater(Node):
     def __init__(self, ready_status_publisher_node):
@@ -28,14 +29,16 @@ class BeakerStatusUpdater(Node):
         # Store the instance of ReadyStatusPublisherNode
         self.ready_status_publisher_node = ready_status_publisher_node
 
-    def update_and_publish_beaker_status(self):
+    def update_robot_status(self):
         # Update Beaker's status to ready
         self.ready_status_publisher_node.set_ready_status(beaker_status=True)
         self.get_logger().info('Updated Beaker status to ready')
 
+    def publish_robot_status(self):
         # Now, publish the updated status
         self.ready_status_publisher_node.publish_ready_status()
         self.get_logger().info('Published the updated ready status')
+
 
 def main(args=None):
     rclpy.init(args=args)
@@ -43,14 +46,16 @@ def main(args=None):
     beaker_status_updater = BeakerStatusUpdater(ready_status_publisher_node)
 
     # Update and publish Beaker's status
-    beaker_status_updater.update_and_publish_beaker_status()
+    # beaker_status_updater.update_and_publish_beaker_status()
+    ready_status_publisher_node.display_robot_statuses()
+    beaker_status_updater.update_robot_status()
+    beaker_status_updater.publish_robot_status()
 
     # Keep the node alive and responsive
     rclpy.spin(beaker_status_updater)
 
     # Clean up before shutting down
     beaker_status_updater.destroy_node()
-    ready_status_publisher_node.destroy_node()
     rclpy.shutdown()
 
 if __name__ == '__main__':
