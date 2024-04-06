@@ -1,8 +1,5 @@
-bool roomba_b2
-bool roomba_b3
-
-bool beaker_b2
-bool beaker_conveyor
-
-bool bunsen_conveyor
+bool roomba
+bool beaker_base2
+bool beaker_conv
+bool bunsen_conv
 bool bunsen_b3

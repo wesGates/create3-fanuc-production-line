@@ -37,12 +37,6 @@ class BunsenNode(Node):
 		self.ready_status_publisher_node = ready_status_publisher_node
 
 
-	def update_robot_status(self):
-		# Update bunsen's status to ready
-		self.ready_status_publisher_node.set_ready_status(bunsen_status=True)
-		self.get_logger().info('Updated bunsen status to ready')
-
-
 	def publish_robot_status(self):
 		# Now, publish the updated status
 		self.ready_status_publisher_node.publish_ready_status()
@@ -60,6 +54,7 @@ class BunsenNode(Node):
 	def set_bunsen_true(self):
 		try: 
 			self.ready_status_publisher_node.set_ready_status(bunsen_status=True)
+			self.publish_robot_status()
 		except:
 			self.get_logger().error(f"Error in display: {error}") # Error logging
 
@@ -67,6 +62,7 @@ class BunsenNode(Node):
 	def set_bunsen_false(self):
 		try: 
 			self.ready_status_publisher_node.set_ready_status(bunsen_status=False)
+			self.publish_robot_status()
 		except:
 			self.get_logger().error(f"Error in display: {error}") # Error logging
 

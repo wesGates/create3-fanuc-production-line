@@ -1,6 +1,8 @@
 import rclpy
 from rclpy.node import Node
 from rclpy.executors import MultiThreadedExecutor
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+
 
 import time
 import sys
@@ -36,13 +38,17 @@ class BeakerNode(Node):
 		# Establish the node objects within the class for node operations
 		self.ready_status_publisher_node = ready_status_publisher_node
 
+		# Creating callback groups for managing subscription callbacks
+		cb_ready_status = MutuallyExclusiveCallbackGroup()
+
 		# Subscribe to the published topic to update latest_ready_status
 		self.ready_status_subscription_ = self.create_subscription(ReadyStatus, 'robot_ready_status', 
-															 self.ready_status_callback, 10)
+															 self.ready_status_callback, 10, callback_group=cb_ready_status)
 		
 		# Initialize the variable that stores the robot ready status information
 		# Ready statuses are updated in the callback functions.
 		self.latest_ready_status = None
+
 
 	def ready_status_callback(self, msg):
 		"""
@@ -67,11 +73,6 @@ class BeakerNode(Node):
 	def show_latest_ready(self):
 		print("!!!!!!!!!", self.latest_ready_status)
 
-	def update_robot_status(self):
-		# Update Beaker's status to ready
-		self.ready_status_publisher_node.set_ready_status(beaker_status=True)
-		self.get_logger().info('Updated Beaker status to ready')
-
 
 	def publish_robot_status(self):
 		# Now, publish the updated status
@@ -80,7 +81,7 @@ class BeakerNode(Node):
 
 
 	def display_robot_statuses(self):
-		# Used in key commander to display the robot states on keypress in the terminal
+		# DUBUGGING: Used in key commander to display the robot states on keypress in the terminal
 		try: 
 			self.ready_status_publisher_node.display_robot_statuses()
 		except:
@@ -89,7 +90,9 @@ class BeakerNode(Node):
 
 	def set_beaker_true(self):
 		try: 
+			print("Setting BEAKER to True")
 			self.ready_status_publisher_node.set_ready_status(beaker_status=True)
+			self.publish_robot_status()
 		except:
 			self.get_logger().error(f"Error in display: {error}") # Error logging
 
@@ -98,47 +101,70 @@ class BeakerNode(Node):
 		try: 
 			print("Resetting BEAKER to False")
 			self.ready_status_publisher_node.set_ready_status(beaker_status=False)
+			self.publish_robot_status()
 		except:
 			self.get_logger().error(f"Error in display: {error}") # Error logging
 
 
-	def wait_for_base2_ready(self):
-			"""
-			This function...
-			1. Continuously asks the publisher to publish the current robot_status.txt contents
-			2. Halts further actions until the statuses of both the roomba and beaker are True.
+
+
+
+	def wait_for_ready(self, robot_status_expectations):
+		"""
+		Waits for the specified robots to reach the desired ready status.
+
+		:param robot_status_expectations: A dictionary with robot names as keys and expected statuses (True/False) as values.
+		
+		Ex) This example function call waits for the 'roomba' status to be False, and 'beaker' to be True:
+		node.wait_for_ready({'roomba': False, 'beaker': True})
+
+		NOTE: Always set your robot's status to the status you are calling before calling this function.
+		^ If you call 'beaker': True, be sure to set beaker to True before calling this function or you will get stuck
+		NOTE: Be aware this function is GPT-generated.
+		"""
+
+		print("Waiting for specific ready statuses...")
+		timeout = 100  # Timeout for the overall waiting
+		check_interval = 1.0  # Time to wait in spin_once for new messages
+		start_time = time.time()
+
+
+		while time.time() - start_time < timeout:
+			# Process incoming messages and wait up to 'check_interval' seconds for new ones
+			rclpy.spin_once(self, timeout_sec=check_interval)
 			
-			NOTE: Variations of this function will be placed in RoombaNode, BeakerNode, and BunsenNode.
-			NOTE: To avoid timeout, it is important that the robot calling this function has set its ready state to True beforehand.
-			"""
-			
-			self.set_beaker_true()
+			if self.latest_ready_status:
+				# Print current statuses for printing
+				current_statuses = {robot: getattr(self.latest_ready_status, robot.lower(), None) 
+									for robot in robot_status_expectations.keys()}
+				print(f"\n Current statuses: {current_statuses}")
 
-			print("Waiting for ready: roomba and beaker. ")
-			timeout = 100  # seconds
-			check_interval = 2  # seconds
-			start_time = time.time()
+				# Check if the desired status is achieved
+				status_check = all(getattr(self.latest_ready_status, robot.lower()) == status 
+								for robot, status in robot_status_expectations.items())
 
-			while time.time() - start_time < timeout:
-
-				# Publish the status to trigger an update
-				# This will update all robot's self.latest_ready_status varriables
-				self.ready_status_publisher_node.publish_ready_status() 
-
-				# print("Show latest ready statuses within wait_for_base_ready: ", self.latest_ready_status)
-
-				# Wait a short time for the message to be published and processed
-				rclpy.spin_once(self, timeout_sec=check_interval)
-				time.sleep(1.0)
-
-				# Check the latest status
-				if self.latest_ready_status and self.latest_ready_status.roomba and self.latest_ready_status.beaker:
-					print("\n !!! Both Roomba and Beaker are ready for dice block handoff at base2 !!!!")
+				if status_check:
+					print(f"\n !!! All specified robots have reached the expected ready statuses !!!")
 					return
 				else:
-					print("\nWaiting for both Roomba and Beaker to be ready at base2...")
+					statuses = ', '.join([f"{robot} is {'True' if status else 'False'}" for robot, status in robot_status_expectations.items()])
+					print(f"       Waiting for: {statuses}...")
+			else:
+				print("\n Waiting for the first status update...")
 
-			print("\n *** Timeout reached without both robots being ready for dice block handoff ***")
+		print("Timeout reached without all specified robots reaching the expected ready statuses.")
+
+	##############################################################################################
+	""" Robot-specific code starts here. """			
+	##############################################################################################
+
+
+	def main_wait_for_base2_ready(self):
+		self.set_beaker_true() # NOTE: Always set robot status before calling wait_for_ready()
+		# self.ready_status_publisher_node.publish_ready_status() # Publish the changed state
+		print("Waiting for roomba and beaker robots ready at base 2")
+		self.wait_for_ready({'roomba': True, 'beaker': True})
+		print("Robots are ready at base 2")
 
 
 	def dice_block_handoff_base2(self):
@@ -177,7 +203,7 @@ if __name__ == '__main__':
 		(KeyCode(char='d'), beaker.display_robot_statuses),
 		(KeyCode(char='y'), beaker.set_beaker_true),
 		(KeyCode(char='g'), beaker.set_beaker_false),
-		(KeyCode(char='e'), beaker.wait_for_base2_ready),
+		(KeyCode(char='e'), beaker.main_wait_for_base2_ready),
 		(KeyCode(char='4'), beaker.dice_block_handoff_base2),
 		(KeyCode(char='p'), beaker.publish_robot_status),
 		(KeyCode(char='v'), beaker.show_latest_ready),
