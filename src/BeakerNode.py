@@ -14,7 +14,9 @@ from key_commander import KeyCommander
 
 
 import my_interfaces
-from my_interfaces.msg import ReadyStatus, Num, Base2status, Base3status   # CHANGE
+from my_interfaces.msg import ReadyStatus  # CHANGE
+from my_interfaces.srv import CheckReadiness
+
 from ReadyStatusPublisherNode import ReadyStatusPublisherNode
 
 import rclpy

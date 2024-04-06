@@ -32,7 +32,10 @@ class ReadyStatusPublisherNode(Node):
 		msg = ReadyStatus()
 		msg.roomba = statuses[0] == 'True'
 		msg.beaker = statuses[1] == 'True'
-		msg.bunsen = statuses[2] == 'True'
+		msg.beaker_conv = statuses[2] == 'True'
+		msg.bunsen_conv = statuses[3] == 'True'
+		msg.bunsen = statuses[4] == 'True'
+
 
 		# Publishing the message
 		self.ready_status_publisher_.publish(msg)
@@ -48,7 +51,11 @@ class ReadyStatusPublisherNode(Node):
 		print("display current robot statuses:")
 		with open(self.status_file_path, 'r') as file:
 			statuses = file.read().strip().split(',')
-			print(f"Roomba: {statuses[0]}, Beaker: {statuses[1]}, Bunsen: {statuses[2]}")
+			print(	f"\n roomba: {statuses[0]}, " + 
+		 			f"\n beaker: {statuses[1]}, " +
+					f"\n beaker_conv: {statuses[2]}, " +
+					f"\n bunsen_conv: {statuses[3]}, " +
+					f"\n bunsen: {statuses[4]}	")
 
 
 	def set_ready_status(self, roomba_status=None, beaker_status=None, bunsen_status=None):

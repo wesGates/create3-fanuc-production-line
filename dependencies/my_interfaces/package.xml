@@ -5,7 +5,7 @@
   <version>0.0.0</version>
   <description>Communicates ready status between robots</description>
   <maintainer email="wkgatesde@gmail.com">gates</maintainer>
-  <license>TODO: License declaration</license>
+  <license>Apache 2.0 License</license>
 
   <depend>geometry_msgs</depend>
   <depend>std_msgs</depend>

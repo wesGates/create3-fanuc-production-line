@@ -1,2 +1,0 @@
-bool roomba
-bool beaker
