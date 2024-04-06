@@ -1,0 +1,6 @@
+# Request
+string robot1
+string robot2
+---
+# Response
+bool ready
