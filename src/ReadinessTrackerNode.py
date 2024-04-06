@@ -19,37 +19,17 @@ import my_interfaces
 from my_interfaces.msg import ReadyStatus  # CHANGE
 from my_interfaces.srv import CheckReadiness
 
-# class ReadinessTrackerNode(Node):
-#     def __init__(self):
-#         super().__init__('readiness_tracker_node')
-#         self.service = self.create_service(CheckReadiness, 'check_readiness', self.check_readiness_callback)
-
-#     def read_robot_statuses(self):
-#         # Assuming the file has a simple comma-separated format like "roomba,True,beaker,False"
-#         with open('robot_status.txt', 'r') as file:
-#             content = file.read().strip().split(',')
-#             statuses = dict(zip(content[::2], content[1::2]))  # Create a dict {'roomba': 'True', 'beaker': 'False'}
-#             return {robot: status == 'True' for robot, status in statuses.items()}  # Convert string 'True'/'False' to boolean
-
-#     def check_readiness_callback(self, request, response):
-#         statuses = self.read_robot_statuses()
-#         response.ready = statuses.get(request.robot1.lower(), False) and statuses.get(request.robot2.lower(), False)
-#         return response
-
 
 class ReadinessTrackerNode(Node):
     def __init__(self):
         super().__init__('readiness_tracker_node')
         self.service = self.create_service(CheckReadiness, 'check_readiness', self.check_readiness_callback)
-        # Define the order of robots as they appear in the file
-        self.robot_order = ['roomba', 'beaker', 'beaker_conv', 'bunsen_conv', 'bunsen']
+        self.robot_order = ['roomba', 'beaker', 'beaker_conv', 'bunsen', 'bunsen_conv']
 
     def read_robot_statuses(self):
         with open('robot_status.txt', 'r') as file:
-            # Read the statuses as a list of booleans
             statuses = [status == 'True' for status in file.read().strip().split(',')]
             
-            # Map these statuses to their respective robot names
             if len(statuses) == len(self.robot_order):
                 return dict(zip(self.robot_order, statuses))
             else:
@@ -58,6 +38,6 @@ class ReadinessTrackerNode(Node):
 
     def check_readiness_callback(self, request, response):
         statuses = self.read_robot_statuses()
-        # Get the readiness status for the requested robots, defaulting to False if not found
-        response.ready = statuses.get(request.robot1.lower(), False) and statuses.get(request.robot2.lower(), False)
+        # Directly return the status of robot1 (or robot2; they should be the same in this new approach)
+        response.ready = statuses.get(request.robot1.lower(), False)
         return response

@@ -111,95 +111,36 @@ class RoombaNode(Node):
 			self.get_logger().error(f"Error in display: {error}") # Error logging
 
 	
-	def send_request(self, robot1, robot2):
+	def send_request(self, other_robot):
 		request = CheckReadiness.Request()
-		request.robot1 = robot1
-		request.robot2 = robot2
+		request.robot1 = other_robot
 		future = self.client.call_async(request)
 		return future
 
 
-	def check_robot_readiness(self, robot1, robot2):
-			# Keep in mind that "ready"
-			self.get_logger().info(f"Checking readiness for {robot1} and {robot2}.")
-
-			while True:
-				future = self.send_request(robot1, robot2)
-				rclpy.spin_until_future_complete(self, future)
-				if future.result() is not None:
-					readiness = future.result().ready
-					if readiness:
-						self.get_logger().info(f'{robot1} and {robot2} are ready.')
-						break  # Exit the loop if both robots are ready
-					else:
-						self.get_logger().info(f'Waiting for {robot1} and {robot2} to be ready. Retrying...')
-						time.sleep(1)  # Wait for a bit before retrying
-				else:
-					self.get_logger().error(f'Exception while calling service: {future.exception()}')
-					time.sleep(1)  # Wait for a bit before retrying in case of an exception
-
-
-	# def check_robot_readiness(self, robot1, robot2):
-	# 	self.get_logger().info(f"Checking readiness for {robot1} and {robot2}.")
-
-	# 	while True:
-	# 		future = self.send_request(robot1, robot2)
-	# 		rclpy.spin_until_future_complete(self, future)
-	# 		if future.result() is not None:
-	# 			readiness = future.result().ready
-	# 			if readiness:
-	# 				self.get_logger().info(f'{robot1} and {robot2} are ready.')
-	# 				break  # Exit the loop if both robots are ready
-	# 			else:
-	# 				# Log the current readiness status of each robot
-	# 				self.get_logger().info(f'Current status - {robot1}: Ready, {robot2}: Not Ready. Retrying...')
-	# 				time.sleep(1)  # Wait for a bit before retrying
-	# 		else:
-	# 			self.get_logger().error(f'Exception while calling service: {future.exception()}')
-	# 			time.sleep(1)  # Wait for a bit before retrying in case of an exception
-
-	def check_robot_status(self, robot_status_expectations):
-		"""
-		Checks if the specified robots have reached their expected statuses.
-		
-		:param robot_status_expectations: A dictionary with robot names as keys and expected statuses (True/False) as values.
-		"""
-		self.get_logger().info("Checking robot statuses based on expectations.")
+	def check_robot_status(self, other_robot, expected_status):
+		self.get_logger().info(f"Checking if {other_robot} is {'ready' if expected_status else 'not ready'}.")
 
 		while True:
-			all_matched = True
-			for robot, expected_status in robot_status_expectations.items():
-				future = self.send_request(robot)
-				rclpy.spin_until_future_complete(self, future)
+			future = self.send_request(other_robot)
+			rclpy.spin_until_future_complete(self, future)
 
-				if future.result() is not None:
-					actual_status = future.result().ready
-					if actual_status != expected_status:
-						all_matched = False
-						self.get_logger().info(f'Current status for {robot} is {actual_status}. Expected: {expected_status}. Retrying...')
-						break  # Exit the for-loop and retry
-					else:
-						self.get_logger().info(f'Status for {robot} matches the expectation: {actual_status}.')
+			if future.result() is not None:
+				actual_status = future.result().ready
+				if actual_status == expected_status:
+					self.get_logger().info(f'{other_robot} status matches the expected status: {expected_status}.')
+					break  # Exit the loop if the status matches
 				else:
-					self.get_logger().error(f'Exception while calling service for {robot}: {future.exception()}')
-					all_matched = False  # If there's an error, consider that statuses don't match
-					break  # Exit the for-loop and retry
-
-			if all_matched:
-				self.get_logger().info("All robots have reached their expected statuses.")
-				break  # Exit the while-loop if all statuses match
+					# This message will now reflect the actual status received and the expected status.
+					self.get_logger().info(f'{other_robot} status does not match. Expected: {expected_status}. Actual: {actual_status}. Retrying...')
+					time.sleep(1)  # Wait for a bit before retrying
 			else:
-				time.sleep(1)  # Wait for a bit before rechecking
+				self.get_logger().error(f'Exception while calling service: {future.exception()}')
+				time.sleep(1)  # Wait for a bit before retrying in case of an exception
 
 
-	def check_base2_readiness(self):
-		self.check_robot_readiness('roomba', 'beaker')
-
-
-	def check_dice_retrieved(self):
-		self.check_robot_status({'roomba': True, 'beaker': False})
-
-
+	def check_readiness(self):
+		self.check_robot_status('beaker', False)
 
 
 	def main(self):
@@ -226,8 +167,7 @@ if __name__ == '__main__':
 		(KeyCode(char='d'), roomba.display_robot_statuses),
 		(KeyCode(char='t'), roomba.set_roomba_true),
 		(KeyCode(char='f'), roomba.set_roomba_false),
-		(KeyCode(char='c'), roomba.check_base2_readiness),
-		(KeyCode(char='s'), roomba.check_base2_readiness),
+		(KeyCode(char='c'), roomba.check_readiness),
 
 	])
 	# print(" Press 'u' to intitiate main routine") # This will be the navigation code
@@ -235,7 +175,7 @@ if __name__ == '__main__':
 	print(" Press 'd' to display all robot states in the text file")
 	print(" Press 't' to set the roomba's status as 'True'")
 	print(" Press 'f' to set the roomba's status as 'False'")
-	print(" Press 'c' to check the readiness of roomba and beaker")
+	print(" Press 'c' to check the readiness of beaker")
 
 
 	try:
