@@ -237,6 +237,8 @@ class FanucActions(Node):
         #self.cartMove(671.175, -141.571, -151.539, 142.619, -43.295, -41.702)           # Conveyor approach
         #self.cartMove(671.175, -141.571, -151.539, 142.619, -43.295, -41.702)           # Conveyor drop
 
+        label = "Moving conveyor 1"
+
         self.convMoveBlock()
 
         label = "Moving to home position"
@@ -252,13 +254,15 @@ class FanucActions(Node):
 
     def convMoveBlock(self):
         label = "Moving conveyor 1"
-        self.convMove('forward')
+        #self.convMove('forward')
         time = datetime.now()
         while beltSensorRear == False:
             dtime = datetime.now()-time
-            if dtime.total_seconds > datetime.timedelta(seconds=3):
+            if dtime.total_seconds > datetime.time(second=5):
+               print("0")
                break
-        self.convMove('stop')
+        #self.convMove('stop')
+        print("1")
 
     def test(self):
         #self.convMove('forward')
