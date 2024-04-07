@@ -47,18 +47,18 @@ class ReadyStatusPublisherNode(Node):
 	def display_robot_statuses(self):
 		"""
 		Display the current status of Roomba, Beaker, and Bunsen by reading the status file.
-		The order is Roomba, Beaker, Bunsen.
+		The order is roomba_base2, beaker, beaker_conv, bunsen_conv, bunsen, roomba_base3
 		"""
 
 		print("display current robot statuses:")
 		with open(self.status_file_path, 'r') as file:
 			statuses = file.read().strip().split(',')
 			print(	f"\n roomba_base2: {statuses[0]}, " + 
-		 			f"\n beaker: 	 {statuses[1]}, " +
+		 			f"\n beaker: 	{statuses[1]}, " +
 					f"\n beaker_conv: 	{statuses[2]}, " +
 					f"\n bunsen_conv: 	{statuses[3]}, " +
 					f"\n bunsen: 	{statuses[4]}, " +
-					f"\n roomba_base3: {statuses[5]}	")
+					f"\n roomba_base3:  {statuses[5]}	")
 
 
 	def set_ready_status(self, 

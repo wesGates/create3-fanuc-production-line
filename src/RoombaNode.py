@@ -67,12 +67,12 @@ class RoombaNode(Node):
 
 		# DEBUGGING
 		print("DEBUG: Start of RoombaNode callback...")
-		print("msg.roomba2 : 	", msg.roomba_base2)
-		print("msg.beaker : 	", msg.beaker)
-		print("msg.beaker_conv:",msg.beaker_conv)
-		print("msg.bunsen_conv:",msg.bunsen_conv)
-		print("msg.bunsen : 	", msg.bunsen)
-		print("msg.roomba3 : 	", msg.roomba_base3)
+		print("msg.roomba_base2 : 	", msg.roomba_base2)
+		print("msg.beaker : 		", msg.beaker)
+		print("msg.beaker_conv :	",msg.beaker_conv)
+		print("msg.bunsen_conv:  	",msg.bunsen_conv)
+		print("msg.bunsen : 		", msg.bunsen)
+		print("msg.roomba_base3 :	", msg.roomba_base3)
 		print("End of RoombaNode callback \n")
 
 		# self.get_logger().info(f"Received /robot_ready_status: {self.latest_ready_status}")
@@ -111,7 +111,7 @@ class RoombaNode(Node):
 
 	def set_roomba_base3_true(self):
 		try: 
-			print("Setting ROOMBA at BASE2: True")
+			print("Setting ROOMBA at BASE3: True")
 			self.ready_status_publisher_node.set_ready_status(roomba_status_base3=True)
 			self.publish_robot_status()
 		except:
@@ -119,7 +119,7 @@ class RoombaNode(Node):
 	
 	def set_roomba_base3_false(self):
 		try: 
-			print("Setting ROOMBA at BASE2: False")
+			print("Setting ROOMBA at BASE3: False")
 			self.ready_status_publisher_node.set_ready_status(roomba_status_base3=False)
 			self.publish_robot_status()
 		except:
