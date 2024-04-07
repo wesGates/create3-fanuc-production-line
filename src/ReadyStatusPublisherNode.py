@@ -51,11 +51,11 @@ class ReadyStatusPublisherNode(Node):
 		print("display current robot statuses:")
 		with open(self.status_file_path, 'r') as file:
 			statuses = file.read().strip().split(',')
-			print(	f"\n roomba: {statuses[0]}, " + 
-		 			f"\n beaker: {statuses[1]}, " +
-					f"\n beaker_conv: {statuses[2]}, " +
-					f"\n bunsen_conv: {statuses[3]}, " +
-					f"\n bunsen: {statuses[4]}	")
+			print(	f"\n roomba: 	 {statuses[0]}, " + 
+		 			f"\n beaker: 	 {statuses[1]}, " +
+					f"\n beaker_conv: 	{statuses[2]}, " +
+					f"\n bunsen_conv: 	{statuses[3]}, " +
+					f"\n bunsen: 	{statuses[4]}	")
 
 
 	def set_ready_status(self, roomba_status=None, beaker_status=None, bunsen_status=None):

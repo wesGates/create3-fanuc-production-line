@@ -44,7 +44,7 @@ class RoombaNode(Node):
 		self.ready_status_subscription_ = self.create_subscription(ReadyStatus, 'robot_ready_status', 
 															 self.ready_status_callback, 10, callback_group=cb_ready_status)
 		
-		# Services
+		# Service for checking the status of any robot
 		self.client = self.create_client(CheckReadiness, 'check_readiness')
 
 		while not self.client.wait_for_service(timeout_sec=1.0):
@@ -77,14 +77,6 @@ class RoombaNode(Node):
 		# self.get_logger().info(f"Received /robot_ready_status: {self.latest_ready_status}")
 
 
-
-
-
-	def publish_robot_status(self):
-		self.ready_status_publisher_node.publish_ready_status()
-		self.get_logger().info('Published the updated ready status')
-
-
 	def display_robot_statuses(self):
 		# DUBUGGING: Used in key commander to display the robot states on keypress in the terminal
 		try: 
@@ -92,10 +84,14 @@ class RoombaNode(Node):
 		except:
 			self.get_logger().error(f"Error in display: {error}") # Error logging
 
+	def publish_robot_status(self):
+		self.ready_status_publisher_node.publish_ready_status()
+		self.get_logger().info('Published the updated ready status')
+
 
 	def set_roomba_true(self):
 		try: 
-			print("Setting ROOMBA to: True")
+			print("Setting ROOMBA: True")
 			self.ready_status_publisher_node.set_ready_status(roomba_status=True)
 			self.publish_robot_status()
 		except:
@@ -104,11 +100,13 @@ class RoombaNode(Node):
 
 	def set_roomba_false(self):
 		try: 
-			print("Setting ROOMBA to: False")
+			print("Setting ROOMBA: False")
 			self.ready_status_publisher_node.set_ready_status(roomba_status=False)
 			self.publish_robot_status()
 		except:
 			self.get_logger().error(f"Error in display: {error}") # Error logging
+
+	
 
 	
 	def send_request(self, other_robot):
@@ -137,6 +135,24 @@ class RoombaNode(Node):
 			else:
 				self.get_logger().error(f'Exception while calling service: {future.exception()}')
 				time.sleep(1)  # Wait for a bit before retrying in case of an exception
+
+	##############################################################################################
+	""" Robot-specific code starts here. """			
+	##############################################################################################
+
+	def check_base2(self):
+		# From roomba, check beaker
+		self.check_robot_status('beaker', True)
+
+	def check_dice_block_handoff_base2(self):
+		# Check whether beaker has retrived the dice block
+		print("Checking whether beaker has the block before moving to base3")
+		self.check_robot_status('beaker', False)
+
+
+	def check_base3(self):
+		self.check_robot_status('bunsen', True)
+
 
 
 	def check_readiness(self):
