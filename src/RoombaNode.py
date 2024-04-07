@@ -11,11 +11,10 @@ sys.path.append("../dependencies/")
 # This is important for running your nodes from the terminal
 from pynput.keyboard import KeyCode
 from key_commander import KeyCommander
-from pynput import keyboard
 
-
+# Import Wes' custom interfaces and nodes
 import my_interfaces
-from my_interfaces.msg import ReadyStatus  # CHANGE
+from my_interfaces.msg import ReadyStatus
 from my_interfaces.srv import CheckReadiness
 from ReadyStatusPublisherNode import ReadyStatusPublisherNode
 from ReadinessTrackerNode import ReadinessTrackerNode
@@ -179,18 +178,29 @@ class RoombaNode(Node):
 		print("Checking whether beaker has retrieved the block and moved away")
 		self.check_robot_status('beaker', False)
 
+		print("!!! Both robots are ready !!!")
+
+
 	def check_base3(self):
 
 		print("Setting roomba_base3 status to True")
 		self.set_roomba_base3_true()
+
 		print("Check if bunsen is ready at base3")
 		self.check_robot_status('bunsen', True)
 
+		print("!!! Both robots are ready !!!")
+
 	def check_dice_block_handoff_base3(self):
-		# Check whether beaker has retrived the dice block
-		print("Checking whether beaker has the block before moving to base1")
+
+		print("Setting roomba_base3 status to True")
+		self.set_roomba_base3_true() # May be unneccessary since it should already be true
+
+		# Check whether beaker has retrieved the dice block and moved away
+		print("Checking whether bunen has the block before moving to base1")
 		self.check_robot_status('bunsen', False)
 
+		print("!!! Both robots are ready !!!")
 
 
 	def main(self):

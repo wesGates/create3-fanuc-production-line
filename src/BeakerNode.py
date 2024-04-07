@@ -245,7 +245,7 @@ if __name__ == '__main__':
 		(KeyCode(char='y'), beaker.set_beaker_true),
 		(KeyCode(char='g'), beaker.set_beaker_false),
 		(KeyCode(char='u'), beaker.set_beaker_conv_true),
-		(KeyCode(char='yh'), beaker.set_beaker_conv_false),
+		(KeyCode(char='h'), beaker.set_beaker_conv_false),
 		(KeyCode(char='p'), beaker.publish_robot_status),
 
 		(KeyCode(char='4'), beaker.check_roomba_base2),
