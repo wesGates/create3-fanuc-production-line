@@ -39,6 +39,7 @@ class BeakerNode(Node):
 
 	def __init__(self):
 		super().__init__('beaker_node')
+		self.status_file_path = 'robot_status.txt'
 
 		# Initialize node objects within the class for node operations
 		self.ready_status_publisher_node = ready_status_publisher_node
@@ -70,18 +71,39 @@ class BeakerNode(Node):
 		I think they will need it in order to do their own wait_for_all_ready operations.
 		"""
 		# Update the latest ready statuses with the message received from the 'robot_ready_status' topic
-		self.latest_ready_status = msg
+		
 		# self.roomba_status = self.latest_ready_status.roomba
 
 		# DEBUGGING
 		print("DEBUG: Start of RoombaNode callback...")
-		print("msg.roomba : 	", msg.roomba_base2)
+		print("msg.roomba_base2 : 	", msg.roomba_base2)
 		print("msg.beaker : 	", msg.beaker)
 		print("msg.beaker_conv:",msg.beaker_conv)
 		print("msg.bunsen_conv:",msg.bunsen_conv)
 		print("msg.bunsen : 	", msg.bunsen)
-		print("msg.roomba : 	", msg.roomba_base3)
+		print("msg.roomba_base3 : 	", msg.roomba_base3)
 		print("End of RoombaNode callback \n")
+
+		self.latest_ready_status = msg
+		statuses = [None,None,None,None,None,None]
+		statuses[0] = msg.roomba_base2
+		statuses[1] = msg.beaker
+		statuses[2] = msg.beaker_conv
+		statuses[3] = msg.bunsen_conv
+		statuses[4] = msg.bunsen
+		statuses[5] = msg.roomba_base3
+
+		statuses = [
+            str(msg.roomba_base2),
+            str(msg.beaker),
+            str(msg.beaker_conv),
+            str(msg.bunsen_conv),
+            str(msg.bunsen),
+            str(msg.roomba_base3),
+        ]
+
+		with open(self.status_file_path, 'w') as file:
+			file.write(','.join(statuses) + '\n')
 
 		# self.get_logger().info(f"Received /robot_ready_status: {self.latest_ready_status}")
 

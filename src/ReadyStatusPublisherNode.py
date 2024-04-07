@@ -18,6 +18,10 @@ class ReadyStatusPublisherNode(Node):
 		self.ready_status_publisher_ = self.create_publisher(ReadyStatus, 'robot_ready_status', 10)
 		self.status_file_path = 'robot_status.txt'
 
+		# Initialize/reset the robot_status.txt file
+		with open(self.status_file_path, 'w') as file:
+			file.write('False,False,False,False,False,False\n')
+
 
 	def publish_ready_status(self):
 		"""
