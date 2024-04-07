@@ -178,14 +178,14 @@ if __name__ == '__main__':
 	time.sleep(1.0)
 	
 	keycom = KeyCommander([
-		(KeyCode(char='d'), bunsen.display_robot_statuses),
+		(KeyCode(char='v'), bunsen.display_robot_statuses),
 		(KeyCode(char='i'), bunsen.set_bunsen_conv_true),
 		(KeyCode(char='j'), bunsen.set_bunsen_conv_false),
 		(KeyCode(char='o'), bunsen.set_bunsen_true),
 		(KeyCode(char='k'), bunsen.set_bunsen_false),
 
 	])
-	print(" Press 'd' to display all robot states in the text file")
+	print(" Press 'v' to display all robot states in the text file")
 	print(" Press 'u' to set bunsen's status as 'True'")
 	print(" Press 'h' to set bunsen's status as 'False'")
 

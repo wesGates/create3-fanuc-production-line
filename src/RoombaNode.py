@@ -98,6 +98,7 @@ class RoombaNode(Node):
 			self.get_logger().error(f"Error in display: {error}") # Error logging
 
 
+
 	def set_roomba_false(self):
 		try: 
 			print("Setting ROOMBA: False")
@@ -106,7 +107,22 @@ class RoombaNode(Node):
 		except:
 			self.get_logger().error(f"Error in display: {error}") # Error logging
 
+
+	def set_roomba_base2_true(self):
+		try: 
+			print("Setting ROOMBA at BASE2: True")
+			self.ready_status_publisher_node.set_ready_status(roomba_base2_status=True)
+			self.publish_robot_status()
+		except:
+			self.get_logger().error(f"Error in display: {error}") # Error logging
 	
+	def set_roomba_base2_false(self):
+		try: 
+			print("Setting ROOMBA at BASE2: False")
+			self.ready_status_publisher_node.set_ready_status(roomba_base2_status=False)
+			self.publish_robot_status()
+		except:
+			self.get_logger().error(f"Error in display: {error}") # Error logging
 
 	
 	def send_request(self, other_robot):
@@ -184,9 +200,11 @@ if __name__ == '__main__':
 	
 	keycom = KeyCommander([
 		(KeyCode(char='u'), roomba.main), 
-		(KeyCode(char='d'), roomba.display_robot_statuses),
-		(KeyCode(char='t'), roomba.set_roomba_true),
-		(KeyCode(char='f'), roomba.set_roomba_false),
+		(KeyCode(char='v'), roomba.display_robot_statuses),
+		(KeyCode(char='r'), roomba.set_roomba_true),
+		(KeyCode(char='d'), roomba.set_roomba_false),
+		(KeyCode(char='t'), roomba.set_roomba_base2_true),
+		(KeyCode(char='f'), roomba.set_roomba_base2_false),
 
 		(KeyCode(char='`'), roomba.check_base2),
 		(KeyCode(char='1'), roomba.check_dice_block_handoff_base2),
@@ -197,7 +215,7 @@ if __name__ == '__main__':
 	])
 	# print(" Press 'u' to intitiate main routine") # This will be the navigation code
 	print(" Press 'u' to intitiate main routine") # TESTING W/ PASSING VARS (KEY COMM ISSUES)
-	print(" Press 'd' to display all robot states in the text file")
+	print(" Press 'v' to display all robot states in the text file")
 	print(" Press 't' to set the roomba's status as 'True'")
 	print(" Press 'f' to set the roomba's status as 'False'")
 	print(" Press 'c' to check the readiness of beaker")

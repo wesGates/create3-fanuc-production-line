@@ -21,7 +21,7 @@ class ReadyStatusPublisherNode(Node):
 	def publish_ready_status(self):
 		"""
 		Publish the status of robots by reading their statuses from the robot_status.txt file.
-		The order is Roomba, Beaker, Bunsen.
+		The order is roomba_base2, beaker, beaker_conv, bunsen_conv, bunsen, roomba_base3
 		"""
 		print("\n Publisher is publishing ready statuses...")
 
@@ -30,11 +30,12 @@ class ReadyStatusPublisherNode(Node):
 
 		# Creating the message to publish
 		msg = ReadyStatus()
-		msg.roomba = statuses[0] == 'True'
+		msg.roomba2 = statuses[0] == 'True'
 		msg.beaker = statuses[1] == 'True'
 		msg.beaker_conv = statuses[2] == 'True'
 		msg.bunsen_conv = statuses[3] == 'True'
 		msg.bunsen = statuses[4] == 'True'
+		msg.roomba3 = statuses[5] == 'True'
 
 
 		# Publishing the message
@@ -48,19 +49,23 @@ class ReadyStatusPublisherNode(Node):
 		Display the current status of Roomba, Beaker, and Bunsen by reading the status file.
 		The order is Roomba, Beaker, Bunsen.
 		"""
+
 		print("display current robot statuses:")
 		with open(self.status_file_path, 'r') as file:
 			statuses = file.read().strip().split(',')
-			print(	f"\n roomba: 	 {statuses[0]}, " + 
+			print(	f"\n roomba_base2:{statuses[0]}, " + 
 		 			f"\n beaker: 	 {statuses[1]}, " +
 					f"\n beaker_conv: 	{statuses[2]}, " +
 					f"\n bunsen_conv: 	{statuses[3]}, " +
-					f"\n bunsen: 	{statuses[4]}	")
+					f"\n bunsen: 	{statuses[4]}, " +
+					f"\n roomba_base3:{statuses[5]}	")
 
 
-	def set_ready_status(self, roomba_status=None, 
+	def set_ready_status(self, 
+					  roomba_status_base2=None, 
 					  beaker_status=None, beaker_conv_status=None,
-					  bunsen_conv_status=None, bunsen_status=None):
+					  bunsen_conv_status=None, bunsen_status=None,
+					  roomba_status_base3=None):
 		"""
 		Update the status of Roomba, Beaker, and Bunsen in the status file.
 		The order is in the direction that the dice block goese:
@@ -73,8 +78,8 @@ class ReadyStatusPublisherNode(Node):
 		# print(statuses)
 
 		# Update statuses based on the input parameters
-		if roomba_status is not None:
-			statuses[0] = str(roomba_status)
+		if roomba_status_base2 is not None:
+			statuses[0] = str(roomba_status_base2)
 		if beaker_status is not None:
 			statuses[1] = str(beaker_status)
 		if beaker_conv_status is not None:
@@ -83,6 +88,8 @@ class ReadyStatusPublisherNode(Node):
 			statuses[3] = str(bunsen_conv_status)
 		if bunsen_status is not None:
 			statuses[4] = str(bunsen_status)
+		if roomba_status_base3 is not None:
+			statuses[5] = str(roomba_status_base3)
 
 		with open(self.status_file_path, 'w') as file:
 			file.write(','.join(statuses) + '\n')

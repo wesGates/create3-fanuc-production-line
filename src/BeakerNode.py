@@ -230,13 +230,6 @@ class BeakerNode(Node):
 
 
 
-
-
-
-
-
-
-
 	def check_readiness(self):
 		self.check_robot_status('bunsen', False)
 
@@ -254,7 +247,7 @@ if __name__ == '__main__':
 	time.sleep(1.0)
 	
 	keycom = KeyCommander([
-		(KeyCode(char='d'), beaker.display_robot_statuses),
+		(KeyCode(char='v'), beaker.display_robot_statuses),
 		(KeyCode(char='y'), beaker.set_beaker_true),
 		(KeyCode(char='g'), beaker.set_beaker_false),
 		(KeyCode(char='u'), beaker.set_beaker_conv_true),
@@ -263,7 +256,7 @@ if __name__ == '__main__':
 		(KeyCode(char='v'), beaker.check_readiness),
 
 	])
-	print(" Press 'd' to display all robot states in the text file")
+	print(" Press 'v' to display all robot states in the text file")
 	print(" Press 'y' to set beaker's status as 'True'")
 	print(" Press 'g' to set beaker's status as 'False'")
 	print(" Press 'u' to set beaker_conv status as 'True'")
