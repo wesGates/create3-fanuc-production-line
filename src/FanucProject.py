@@ -21,6 +21,7 @@ from fanuc_interfaces.msg import CurGripper, CurCartesian, CurJoints, ProxReadin
 
 from BeakerNode import BeakerNode
 
+import time
 from time import sleep
 
 from datetime import datetime
@@ -45,6 +46,8 @@ beltSensorFront = False
 convReady = True
 
 position = [[],[]]
+
+fault = ""
 
 nodeBeaker = BeakerNode()
 
@@ -88,12 +91,12 @@ class FanucTopic(Node):
 
     def convListener(self, msg):
         global beltSensorFront
-        beltSensorFront= msg.left
+        beltSensorFront = msg.left
         global beltSensorRear
-        beltSensorRear= msg.right
+        beltSensorRear = msg.right
 
-        if beltSensorFront == True:
-            FanucActions.convMoveBlock(FanucActions)
+        #if beltSensorFront == True:
+        #    FanucActions.convMoveBlock(FanucActions)
 
     def moveListener(self, msg):
         global isMoving 
@@ -138,7 +141,7 @@ class FanucActions(Node):
             "node": "crx10",
             "nodeId": "bryancrx10_1",
             "productLine": "moscow",
-            "CRX10report":{
+            "crx10report":{
                 "label":label,
                 "action":action,
                 "isHome":isHome,
@@ -151,8 +154,7 @@ class FanucActions(Node):
                 "lineSensorBackBelt":beltSensorRear,
                 "lineSensorFrontBelt":beltSensorFront,
                 "convReady":convReady,
-                "Fault": {
-                }
+                "Fault": fault
             },
             "date": str(datetime.now())
         }
@@ -170,6 +172,7 @@ class FanucActions(Node):
         cart_goal.p = p
         cart_goal.r = r
         self.cart_ac.send_goal(cart_goal)
+        global action
         action = "cartMove"
         self.reportSender()
         
@@ -183,6 +186,7 @@ class FanucActions(Node):
         joint_goal.joint5 = j5
         joint_goal.joint6 = j6
         self.joint_ac.send_goal(joint_goal)
+        global action
         action = "jointMove"
         self.reportSender()
 
@@ -195,6 +199,7 @@ class FanucActions(Node):
         conv_goal = Conveyor.Goal()
         conv_goal.command = direction
         self.conv_ac.send_goal(conv_goal)
+        global action
         action = "convMove"
         self.reportSender()
     	
@@ -207,10 +212,12 @@ class FanucActions(Node):
         schunk_goal = SchunkGripper.Goal()
         schunk_goal.command = type
         self.schunk_ac.send_goal(schunk_goal)
+        global action
         action = "gripperMove"
         self.reportSender()
 
     def taskBeaker(self):
+        global label, action, fault
         self.schunkMove('open')
         
         self.cartMove(618.352, 1.623, -83.733, -179.284, -2.058, -59.679)               # Home
@@ -221,8 +228,12 @@ class FanucActions(Node):
 
         self.cartMove(302.556, -539.279, -83.733, -179.284, -2.058, -120.535)           # Avoid table
         #self.cartMove(-118.402, -561.427, -1012.155, -177.467, -2.058, -149.770)
-        #self.cartMove(671.175, -141.571, -151.539, 142.619, -43.295, -41.702)           # Create3 approach
-        self.jointMove(-88.794, 97.111, -108.691, 6.410, 20.199, -64.552)               # Pickup
+        self.jointMove(-87.14, 89.965, -103.104, 3.492, 12.337, -69.112)                # Create3 approach
+
+        #self.nodeBeaker.check_roomba_base2()
+
+        #self.jointMove(-88.794, 97.111, -108.691, 6.410, 20.199, -64.552)              # Pickup (old)
+        self.jointMove(-87.365, 95.745, -103.319, 3.542, 13.117, -69.11)                # Pickup
         
         withDice = True
         self.schunkMove('close')
@@ -230,18 +241,24 @@ class FanucActions(Node):
         label = "Dice block flip"
 
         self.cartMove(302.556, -539.279, -83.733, -179.284, -2.058, -120.535)           # Avoid table
-        self.cartMove(671.175, -141.571, -181.539, 142.619, -43.295, -41.702)           # Angled drop
+        self.cartMove(656.348, -144.366, -195.534, 127.834, -51.798, -31.558)           # Angled drop
 
         self.schunkMove('open')
 
-        self.cartMove(671.175, -141.571, -151.539, 142.619, -43.295, -41.702)           # Move away
-        #self.cartMove(671.175, -141.571, -151.539, 142.619, -43.295, -41.702)           # Table approach
-        #self.cartMove(671.175, -141.571, -151.539, 142.619, -43.295, -41.702)           # Pickup
+        self.cartMove(656.348, -54.366, -195.534, 127.834, -51.798, -31.558)            # Move away
+        self.cartMove(653.397, -161.278, -121.553, 179.158, -1.101, -61.980)            # Table approach
+        self.cartMove(653.397, -161.278, -185.0, 179.158, -1.101, -61.980)              # Pickup
 
         label = "Moving dice block to conveyor 1"
+        self.schunkMove('close')
 
-        #self.cartMove(671.175, -141.571, -151.539, 142.619, -43.295, -41.702)           # Conveyor approach
-        #self.cartMove(671.175, -141.571, -151.539, 142.619, -43.295, -41.702)           # Conveyor drop
+        self.cartMove(791.903, 643.183, -53.923, 178.571, 0.950, 30.197)                # Conveyor approach
+        self.cartMove(791.903, 643.183, -183.923, 178.571, 0.950, 30.197)               # Conveyor drop
+
+        self.schunkMove('open')
+        withDice = False
+
+        self.cartMove(791.903, 643.183, -53.923, 178.571, 0.950, 30.197)                # Conveyor approach
 
         label = "Moving conveyor 1"
 
@@ -249,7 +266,7 @@ class FanucActions(Node):
 
         label = "Moving to home position"
 
-        #self.cartMove(618.352, 1.623, -83.733, -179.284, -2.058, -59.679)               # Home
+        self.cartMove(618.352, 1.623, -83.733, -179.284, -2.058, -59.679)               # Home
 
         '''request = Trigger.Request() # Make a request object
         while not self.gripService.wait_for_service(timeout_sec=1.0):
@@ -259,29 +276,29 @@ class FanucActions(Node):
         print(result)'''
 
     def convMoveBlock(self):
-        label = "Moving conveyor 1"
-        #self.convMove('forward')
-        time = datetime.now()
+        global fault
+        self.convMove('forward')
+        timeStart = time.time()
         while beltSensorRear == False:
-            dtime = datetime.now()-time
-            if dtime.total_seconds > datetime.time(second=5):
-               print("0")
+            if time.time()-timeStart > 10:
+               fault = "No dice block detected on conveyor"
+               self.reportSender()
                break
-        #self.convMove('stop')
-        print("1")
+        self.convMove('stop')
 
     def test(self):
         #self.convMove('forward')
         #self.schunkMove('open')
         #self.cartMove(618.352, 1.623, -83.733, -179.284, -2.058, -59.679)
-        #sleep(2)
+        sleep(2)
         #self.convMove('stop')
         #self.schunkMove('close')
 
-        #self.reportSender()
+        self.reportSender()
         #if beltSensorFront == True:
         #self.convMoveBlock()
-        self.nodeBeaker.check_roomba_base2()
+        #self.nodeBeaker.check_roomba_base2()
+        #self.cartMove(791.903, 643.183, -53.923, 178.571, 0.950, 30.197)
 
 
 
@@ -302,7 +319,7 @@ if __name__ == '__main__':
     
     # This allows us to start the function once the node is spinning
     keycom = KeyCommander([
-		(KeyCode(char='s'), mainBeaker.test),
+		(KeyCode(char='s'), mainBeaker.taskBeaker),
 		])
     print("S")
     exec.spin() # Start executing the nodes
