@@ -111,6 +111,22 @@ class BunsenNode(Node):
 		except:
 			self.get_logger().error(f"Error in display: {error}") # Error logging
 
+	def set_bunsen_conv_true(self):
+		try: 
+			print("Setting bunsen_CONV: True")
+			self.ready_status_publisher_node.set_ready_status(bunsen_conv_status=True)
+			self.publish_robot_status()
+		except:
+			self.get_logger().error(f"Error in display: {error}") # Error logging
+
+	def set_bunsen_conv_false(self):
+		try: 
+			print("Setting bunsen_CONV: False")
+			self.ready_status_publisher_node.set_ready_status(bunsen_conv_status=False)
+			self.publish_robot_status()
+		except:
+			self.get_logger().error(f"Error in display: {error}") # Error logging
+
 
 
 
@@ -143,7 +159,7 @@ class BunsenNode(Node):
 
 
 	##############################################################################################
-	""" Robot-specific code starts here. """			
+	""" Robot-specific status checking starts here. """			
 	##############################################################################################
 
 
@@ -163,9 +179,10 @@ if __name__ == '__main__':
 	
 	keycom = KeyCommander([
 		(KeyCode(char='d'), bunsen.display_robot_statuses),
-		(KeyCode(char='u'), bunsen.set_bunsen_true),
-		(KeyCode(char='h'), bunsen.set_bunsen_false),
-		(KeyCode(char='b'), bunsen.check_readiness),
+		(KeyCode(char='i'), bunsen.set_bunsen_conv_true),
+		(KeyCode(char='j'), bunsen.set_bunsen_conv_false),
+		(KeyCode(char='o'), bunsen.set_bunsen_true),
+		(KeyCode(char='k'), bunsen.set_bunsen_false),
 
 	])
 	print(" Press 'd' to display all robot states in the text file")

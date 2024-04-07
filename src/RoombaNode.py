@@ -137,11 +137,15 @@ class RoombaNode(Node):
 				time.sleep(1)  # Wait for a bit before retrying in case of an exception
 
 	##############################################################################################
-	""" Robot-specific code starts here. """			
+	""" Robot-specific status checking starts here. """			
 	##############################################################################################
 
+	# IMPORTANT! Always set your robot's status before checking other robots
+	# NOTE: Always set crx10 statuses to False after picking up dice block
+
 	def check_base2(self):
-		print("Check if beaker is readym at base2")
+		self.set_roomba_true()
+		print("Check if beaker is ready at base2")
 		self.check_robot_status('beaker', True)
 
 	def check_dice_block_handoff_base2(self):
@@ -183,7 +187,12 @@ if __name__ == '__main__':
 		(KeyCode(char='d'), roomba.display_robot_statuses),
 		(KeyCode(char='t'), roomba.set_roomba_true),
 		(KeyCode(char='f'), roomba.set_roomba_false),
-		(KeyCode(char='c'), roomba.check_readiness),
+
+		(KeyCode(char='`'), roomba.check_base2),
+		(KeyCode(char='1'), roomba.check_dice_block_handoff_base2),
+		(KeyCode(char='2'), roomba.check_base3),
+		(KeyCode(char='3'), roomba.check_dice_block_handoff_base3),
+
 
 	])
 	# print(" Press 'u' to intitiate main routine") # This will be the navigation code
