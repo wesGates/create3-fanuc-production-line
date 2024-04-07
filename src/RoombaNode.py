@@ -141,22 +141,22 @@ class RoombaNode(Node):
 	##############################################################################################
 
 	def check_base2(self):
-		# From roomba, check beaker
+		print("Check if beaker is readym at base2")
 		self.check_robot_status('beaker', True)
 
 	def check_dice_block_handoff_base2(self):
-		# Check whether beaker has retrived the dice block
 		print("Checking whether beaker has the block before moving to base3")
 		self.check_robot_status('beaker', False)
 
-
 	def check_base3(self):
+		print("Check if beaker is ready at base3")
 		self.check_robot_status('bunsen', True)
 
+	def check_dice_block_handoff_base3(self):
+		# Check whether beaker has retrived the dice block
+		print("Checking whether beaker has the block before moving to base1")
+		self.check_robot_status('bunsen', False)
 
-
-	def check_readiness(self):
-		self.check_robot_status('beaker', False)
 
 
 	def main(self):

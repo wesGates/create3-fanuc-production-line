@@ -115,7 +115,21 @@ class BeakerNode(Node):
 		except:
 			self.get_logger().error(f"Error in display: {error}") # Error logging
 
+	def set_beaker_conv_true(self):
+		try: 
+			print("Setting BEAKER_CONV: True")
+			self.ready_status_publisher_node.set_ready_status(beaker_conv_status=True)
+			self.publish_robot_status()
+		except:
+			self.get_logger().error(f"Error in display: {error}") # Error logging
 
+	def set_beaker_conv_false(self):
+		try: 
+			print("Setting BEAKER_CONV: False")
+			self.ready_status_publisher_node.set_ready_status(beaker_conv_status=False)
+			self.publish_robot_status()
+		except:
+			self.get_logger().error(f"Error in display: {error}") # Error logging
 
 
 	def send_request(self, other_robot):
@@ -216,6 +230,8 @@ if __name__ == '__main__':
 		(KeyCode(char='d'), beaker.display_robot_statuses),
 		(KeyCode(char='y'), beaker.set_beaker_true),
 		(KeyCode(char='g'), beaker.set_beaker_false),
+		(KeyCode(char='u'), beaker.set_beaker_conv_true),
+		(KeyCode(char='h'), beaker.set_beaker_conv_false),
 		(KeyCode(char='p'), beaker.publish_robot_status),
 		(KeyCode(char='v'), beaker.check_readiness),
 
@@ -223,6 +239,8 @@ if __name__ == '__main__':
 	print(" Press 'd' to display all robot states in the text file")
 	print(" Press 'y' to set beaker's status as 'True'")
 	print(" Press 'g' to set beaker's status as 'False'")
+	print(" Press 'u' to set beaker_conv status as 'True'")
+	print(" Press 'h' to set beaker_conv status as 'False'")
 	print(" Press 'p' to manually publish the contents of the status text file")
 	print(" Press 'v' to call the service to check the selected robot's readiness")
 

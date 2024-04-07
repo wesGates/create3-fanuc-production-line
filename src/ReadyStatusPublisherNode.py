@@ -58,10 +58,13 @@ class ReadyStatusPublisherNode(Node):
 					f"\n bunsen: 	{statuses[4]}	")
 
 
-	def set_ready_status(self, roomba_status=None, beaker_status=None, bunsen_status=None):
+	def set_ready_status(self, roomba_status=None, 
+					  beaker_status=None, beaker_conv_status=None,
+					  bunsen_conv_status=None, bunsen_status=None):
 		"""
 		Update the status of Roomba, Beaker, and Bunsen in the status file.
-		The order is Roomba, Beaker, Bunsen.
+		The order is in the direction that the dice block goese:
+		roomba, beaker, beaker_conv, bunsen_conv, bunsen
 		"""
 		with open(self.status_file_path, 'r') as file:
 			statuses = file.read().strip().split(',')
@@ -74,8 +77,12 @@ class ReadyStatusPublisherNode(Node):
 			statuses[0] = str(roomba_status)
 		if beaker_status is not None:
 			statuses[1] = str(beaker_status)
+		if beaker_conv_status is not None:
+			statuses[2] = str(beaker_conv_status)
+		if bunsen_conv_status is not None:
+			statuses[3] = str(bunsen_conv_status)
 		if bunsen_status is not None:
-			statuses[2] = str(bunsen_status)
+			statuses[4] = str(bunsen_status)
 
 		with open(self.status_file_path, 'w') as file:
 			file.write(','.join(statuses) + '\n')
