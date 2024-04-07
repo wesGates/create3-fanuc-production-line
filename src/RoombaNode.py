@@ -143,6 +143,7 @@ class RoombaNode(Node):
 			if future.result() is not None:
 				actual_status = future.result().ready
 				if actual_status == expected_status:
+					print("SUCCESS")
 					self.get_logger().info(f'{other_robot} status matches the expected status: {expected_status}.')
 					break  # Exit the loop if the status matches
 				else:
@@ -161,16 +162,28 @@ class RoombaNode(Node):
 	# NOTE: Always set crx10 statuses to False after picking up dice block
 
 	def check_base2(self):
-		self.set_roomba_true()
+
+		print("Setting roomba_base2 status to True")
+		self.set_roomba_base2_true()
+
 		print("Check if beaker is ready at base2")
 		self.check_robot_status('beaker', True)
 
+		print("!!! Both robots are ready !!!")
+
 	def check_dice_block_handoff_base2(self):
-		print("Checking whether beaker has the block before moving to base3")
+
+		print("Setting roomba_base2 status to True")
+		self.set_roomba_base2_true() # May be unneccessary since it should already be true
+
+		print("Checking whether beaker has retrieved the block and moved away")
 		self.check_robot_status('beaker', False)
 
 	def check_base3(self):
-		print("Check if beaker is ready at base3")
+
+		print("Setting roomba_base3 status to True")
+		self.set_roomba_base3_true()
+		print("Check if bunsen is ready at base3")
 		self.check_robot_status('bunsen', True)
 
 	def check_dice_block_handoff_base3(self):
@@ -181,7 +194,6 @@ class RoombaNode(Node):
 
 
 	def main(self):
-
 		pass
 
 
@@ -217,10 +229,10 @@ if __name__ == '__main__':
 	# print(" Press 'u' to intitiate main routine") # This will be the navigation code
 	print(" Press 'u' to intitiate main routine") # TESTING W/ PASSING VARS (KEY COMM ISSUES)
 	print(" Press 'v' to display all robot states in the text file")
-	print(" Press 'r' to set the roomba's status as 'True'")
-	print(" Press 'd' to set the roomba's status as 'False'")
-	print(" Press 't' to set the roomba_base2 status as 'True'")
-	print(" Press 'f' to set the roomba_base2 status as 'False'")
+	print(" Press 'r' to set the roomba_base2's status as 'True'")
+	print(" Press 'd' to set the roomba_base2's status as 'False'")
+	print(" Press 't' to set the roomba_base3's status as 'True'")
+	print(" Press 'f' to set the roomba_base3's status as 'False'")
 	print(" Press 'c' to check the readiness of beaker")
 
 

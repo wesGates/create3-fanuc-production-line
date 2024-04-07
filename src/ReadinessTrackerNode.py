@@ -24,7 +24,7 @@ class ReadinessTrackerNode(Node):
     def __init__(self):
         super().__init__('readiness_tracker_node')
         self.service = self.create_service(CheckReadiness, 'check_readiness', self.check_readiness_callback)
-        self.robot_order = ['roomba', 'beaker', 'beaker_conv', 'bunsen', 'bunsen_conv']
+        self.robot_order = ['roomba_base2', 'beaker', 'beaker_conv', 'bunsen_conv', 'bunsen', 'roomba_base3' ]
 
     def read_robot_statuses(self):
         with open('robot_status.txt', 'r') as file:

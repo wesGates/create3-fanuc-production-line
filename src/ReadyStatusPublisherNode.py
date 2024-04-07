@@ -1,3 +1,4 @@
+import time
 import sys
 sys.path.append("../dependencies/")
 
@@ -40,6 +41,7 @@ class ReadyStatusPublisherNode(Node):
 
 		# Publishing the message
 		self.ready_status_publisher_.publish(msg)
+		time.sleep(0.1)
 
 		# print(f"DEBUGGING: Published statuses - Roomba: {msg.roomba}, Beaker: {msg.beaker}, Bunsen: {msg.bunsen}")
 

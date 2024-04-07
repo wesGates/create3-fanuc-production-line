@@ -75,11 +75,12 @@ class BeakerNode(Node):
 
 		# DEBUGGING
 		print("DEBUG: Start of RoombaNode callback...")
-		print("msg.roomba : 	", msg.roomba)
+		print("msg.roomba : 	", msg.roomba_base2)
 		print("msg.beaker : 	", msg.beaker)
 		print("msg.beaker_conv:",msg.beaker_conv)
 		print("msg.bunsen_conv:",msg.bunsen_conv)
 		print("msg.bunsen : 	", msg.bunsen)
+		print("msg.roomba : 	", msg.roomba_base3)
 		print("End of RoombaNode callback \n")
 
 		# self.get_logger().info(f"Received /robot_ready_status: {self.latest_ready_status}")
@@ -149,6 +150,7 @@ class BeakerNode(Node):
 			if future.result() is not None:
 				actual_status = future.result().ready
 				if actual_status == expected_status:
+					print("SUCCESS")
 					self.get_logger().info(f'{other_robot} status matches the expected status: {expected_status}.')
 					break  # Exit the loop if the status matches
 				else:
@@ -213,25 +215,17 @@ class BeakerNode(Node):
 	# IMPORTANT! Always set your robot's status before checking other robots
 	# NOTE: Always set crx10 statuses to False after picking up dice block
 
-	def check_base2(self):
+	def check_roomba_base2(self):
 		# NOTE: Remember to set beaker status to False after picking up dice block!
+		print("Setting beaker status to True")
+		self.set_beaker_true()
 		print("Check if roomba is ready at base2")
 		self.check_robot_status('roomba', True)
 
-	def check_base3(self):
-		print("Check if roomba is ready at base3")
-		self.check_robot_status('bunsen', True)
+	def check_bunsen_conv(self):
+		print("Check if bunsen is ready at conveyor")
+		self.check_robot_status('bunsen_conv', True)
 
-	def check_dice_block_handoff_base3(self):
-		# Check whether beaker has retrived the dice block
-		print("Checking whether beaker has the block before moving to base1")
-		self.check_robot_status('bunsen', False)
-
-
-
-
-	def check_readiness(self):
-		self.check_robot_status('bunsen', False)
 
 
 # The following Key Commander is used for manually checking outputs in the terminal
@@ -251,9 +245,11 @@ if __name__ == '__main__':
 		(KeyCode(char='y'), beaker.set_beaker_true),
 		(KeyCode(char='g'), beaker.set_beaker_false),
 		(KeyCode(char='u'), beaker.set_beaker_conv_true),
-		(KeyCode(char='h'), beaker.set_beaker_conv_false),
+		(KeyCode(char='yh'), beaker.set_beaker_conv_false),
 		(KeyCode(char='p'), beaker.publish_robot_status),
-		(KeyCode(char='v'), beaker.check_readiness),
+
+		(KeyCode(char='4'), beaker.check_roomba_base2),
+		(KeyCode(char='5'), beaker.check_bunsen_conv),
 
 	])
 	print(" Press 'v' to display all robot states in the text file")
@@ -262,7 +258,8 @@ if __name__ == '__main__':
 	print(" Press 'u' to set beaker_conv status as 'True'")
 	print(" Press 'h' to set beaker_conv status as 'False'")
 	print(" Press 'p' to manually publish the contents of the status text file")
-	print(" Press 'v' to call the service to check the selected robot's readiness")
+	print(" Press '4' to call the service and check if roomba is ready at base2")
+	print(" Press '5' to call the service and check if bunsen is ready at the conveyor")
 
 
 	try:
