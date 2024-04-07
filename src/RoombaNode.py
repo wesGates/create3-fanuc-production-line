@@ -31,6 +31,8 @@ class RoombaNode(Node):
 
 	def __init__(self):
 		super().__init__('roomba_node')
+		self.status_file_path = 'robot_status.txt'
+
 
 		# Initialize node objects within the class for node operations
 		self.ready_status_publisher_node = ready_status_publisher_node
@@ -57,23 +59,38 @@ class RoombaNode(Node):
 
 	def ready_status_callback(self, msg):
 		"""
-		The other nodes don't have this function, yet. 
-		I think they will need it in order to do their own wait_for_all_ready operations.
+		Callback function to update the latest robot statuses based on the message received from 
+		the 'robot_ready_status' topic. It then writes these statuses to the 'robot_status.txt' file.
 		"""
-		# Update the latest ready statuses with the message received from the 'robot_ready_status' topic
 		self.latest_ready_status = msg
-		# self.roomba_status = self.latest_ready_status.roomba
+		
+		# Extract the status of each robot from the received message
+		statuses = [
+			str(msg.roomba_base2),
+			str(msg.beaker),
+			str(msg.beaker_conv),
+			str(msg.bunsen_conv),
+			str(msg.bunsen),
+			str(msg.roomba_base3),
+		]
 
+		# Update the robot_status.txt file with the latest statuses
+		with open(self.status_file_path, 'w') as file:
+			file.write(','.join(statuses) + '\n')
+
+		print("DEBUG: Done updating local statuses")
+		
 		# DEBUGGING
 		print("DEBUG: Start of RoombaNode callback...")
-		print("msg.roomba_base2 : 	", msg.roomba_base2)
-		print("msg.beaker : 		", msg.beaker)
-		print("msg.beaker_conv :	",msg.beaker_conv)
-		print("msg.bunsen_conv:  	",msg.bunsen_conv)
-		print("msg.bunsen : 		", msg.bunsen)
-		print("msg.roomba_base3 :	", msg.roomba_base3)
+		print("msg.roomba_base2 :   ", msg.roomba_base2)
+		print("msg.beaker :      ", msg.beaker)
+		print("msg.beaker_conv :", msg.beaker_conv)
+		print("msg.bunsen_conv:    ", msg.bunsen_conv)
+		print("msg.bunsen :     ", msg.bunsen)
+		print("msg.roomba_base3 :", msg.roomba_base3)
 		print("End of RoombaNode callback \n")
 
+		# Optionally, update internal state or log the message
 		# self.get_logger().info(f"Received /robot_ready_status: {self.latest_ready_status}")
 
 
