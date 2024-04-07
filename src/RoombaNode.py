@@ -67,11 +67,12 @@ class RoombaNode(Node):
 
 		# DEBUGGING
 		print("DEBUG: Start of RoombaNode callback...")
-		print("msg.roomba : 	", msg.roomba)
+		print("msg.roomba2 : 	", msg.roomba_base2)
 		print("msg.beaker : 	", msg.beaker)
 		print("msg.beaker_conv:",msg.beaker_conv)
 		print("msg.bunsen_conv:",msg.bunsen_conv)
 		print("msg.bunsen : 	", msg.bunsen)
+		print("msg.roomba3 : 	", msg.roomba_base3)
 		print("End of RoombaNode callback \n")
 
 		# self.get_logger().info(f"Received /robot_ready_status: {self.latest_ready_status}")
@@ -89,37 +90,37 @@ class RoombaNode(Node):
 		self.get_logger().info('Published the updated ready status')
 
 
-	def set_roomba_true(self):
-		try: 
-			print("Setting ROOMBA: True")
-			self.ready_status_publisher_node.set_ready_status(roomba_status=True)
-			self.publish_robot_status()
-		except:
-			self.get_logger().error(f"Error in display: {error}") # Error logging
-
-
-
-	def set_roomba_false(self):
-		try: 
-			print("Setting ROOMBA: False")
-			self.ready_status_publisher_node.set_ready_status(roomba_status=False)
-			self.publish_robot_status()
-		except:
-			self.get_logger().error(f"Error in display: {error}") # Error logging
-
-
 	def set_roomba_base2_true(self):
 		try: 
+			print("Setting ROOMBA: True")
+			self.ready_status_publisher_node.set_ready_status(roomba_status_base2=True)
+			self.publish_robot_status()
+		except:
+			self.get_logger().error(f"Error in display: {error}") # Error logging
+
+
+
+	def set_roomba_base2_false(self):
+		try: 
+			print("Setting ROOMBA: False")
+			self.ready_status_publisher_node.set_ready_status(roomba_status_base2=False)
+			self.publish_robot_status()
+		except:
+			self.get_logger().error(f"Error in display: {error}") # Error logging
+
+
+	def set_roomba_base3_true(self):
+		try: 
 			print("Setting ROOMBA at BASE2: True")
-			self.ready_status_publisher_node.set_ready_status(roomba_base2_status=True)
+			self.ready_status_publisher_node.set_ready_status(roomba_status_base3=True)
 			self.publish_robot_status()
 		except:
 			self.get_logger().error(f"Error in display: {error}") # Error logging
 	
-	def set_roomba_base2_false(self):
+	def set_roomba_base3_false(self):
 		try: 
 			print("Setting ROOMBA at BASE2: False")
-			self.ready_status_publisher_node.set_ready_status(roomba_base2_status=False)
+			self.ready_status_publisher_node.set_ready_status(roomba_status_base3=False)
 			self.publish_robot_status()
 		except:
 			self.get_logger().error(f"Error in display: {error}") # Error logging
@@ -201,10 +202,10 @@ if __name__ == '__main__':
 	keycom = KeyCommander([
 		(KeyCode(char='u'), roomba.main), 
 		(KeyCode(char='v'), roomba.display_robot_statuses),
-		(KeyCode(char='r'), roomba.set_roomba_true),
-		(KeyCode(char='d'), roomba.set_roomba_false),
-		(KeyCode(char='t'), roomba.set_roomba_base2_true),
-		(KeyCode(char='f'), roomba.set_roomba_base2_false),
+		(KeyCode(char='r'), roomba.set_roomba_base2_true),
+		(KeyCode(char='d'), roomba.set_roomba_base2_false),
+		(KeyCode(char='t'), roomba.set_roomba_base3_true),
+		(KeyCode(char='f'), roomba.set_roomba_base3_false),
 
 		(KeyCode(char='`'), roomba.check_base2),
 		(KeyCode(char='1'), roomba.check_dice_block_handoff_base2),
@@ -216,8 +217,10 @@ if __name__ == '__main__':
 	# print(" Press 'u' to intitiate main routine") # This will be the navigation code
 	print(" Press 'u' to intitiate main routine") # TESTING W/ PASSING VARS (KEY COMM ISSUES)
 	print(" Press 'v' to display all robot states in the text file")
-	print(" Press 't' to set the roomba's status as 'True'")
-	print(" Press 'f' to set the roomba's status as 'False'")
+	print(" Press 'r' to set the roomba's status as 'True'")
+	print(" Press 'd' to set the roomba's status as 'False'")
+	print(" Press 't' to set the roomba_base2 status as 'True'")
+	print(" Press 'f' to set the roomba_base2 status as 'False'")
 	print(" Press 'c' to check the readiness of beaker")
 
 
