@@ -19,6 +19,8 @@ import fanuc_interfaces
 from fanuc_interfaces.action import CartPose, SchunkGripper, JointPose, Conveyor
 from fanuc_interfaces.msg import CurGripper, CurCartesian, CurJoints, ProxReadings, IsMoving
 
+from BeakerNode import BeakerNode
+
 from time import sleep
 
 from datetime import datetime
@@ -43,6 +45,8 @@ beltSensorFront = False
 convReady = True
 
 position = [[],[]]
+
+nodeBeaker = BeakerNode()
 
 # Node that listens to the fanuc topic
 class FanucTopic(Node):
@@ -107,6 +111,8 @@ class FanucTopic(Node):
 class FanucActions(Node):
     def __init__(self, namespace):
         super().__init__("robotActions")
+
+        self.nodeBeaker = nodeBeaker
 
 		# Actions, note their callback groups
         self.cart_ac = ActionClient(self, CartPose, f'/{namespace}/cartesian_pose')
@@ -274,17 +280,17 @@ class FanucActions(Node):
 
         #self.reportSender()
         #if beltSensorFront == True:
-        self.convMoveBlock()
-            
-        
+        #self.convMoveBlock()
+        self.nodeBeaker.check_roomba_base2()
 
 
 
 if __name__ == '__main__':
-    rclpy.init()
+    #rclpy.init()
     # Create our 2 nodes
     mainBeaker = FanucActions('beaker')
     listenerBeaker = FanucTopic('beaker')
+    #nodeBeaker = BeakerNode()
     #mainBunsen = FanucActions('bunsen')
     #listenerBunsen = FanucActions('bunsen')
 
