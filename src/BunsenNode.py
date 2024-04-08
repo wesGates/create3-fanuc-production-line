@@ -22,7 +22,7 @@ from ReadinessTrackerNode import ReadinessTrackerNode
 
 
 # Initialize and connect to OTHER nodes
-rclpy.init()
+#rclpy.init()
 namespace = 'bunsen'
 ready_status_publisher_node = ReadyStatusPublisherNode()
 readiness_tracker_node = ReadinessTrackerNode()
@@ -34,7 +34,7 @@ class BunsenNode(Node):
 
 	def __init__(self):
 		super().__init__('bunsen_node')
-
+		self.status_file_path = 'robot_status.txt'
 
 		# Initialize node objects within the class for node operations
 		self.ready_status_publisher_node = ready_status_publisher_node
