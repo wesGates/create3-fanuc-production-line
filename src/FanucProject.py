@@ -249,8 +249,8 @@ class FanucActions(Node):
         
         self.cartMove(618.352, 1.623, -83.733, -179.284, -2.058, -59.679)               # Home
         
-        while not brokerSender.start_all_message:                                      # Wait for start signal
-            pass
+        #while not brokerSender.start_all_message:                                      # Wait for start signal
+        #    pass
 
         label = "Picking up dice block at base 2"
 
@@ -314,8 +314,8 @@ class FanucActions(Node):
         self.cartMove(568.058, -75.22, 19.527, -179.637, 1.597, 29.106)                 # Home
         self.schunkMove('open')
 
-        while not brokerSender.start_all_message:                                       # Wait for start signal
-            pass
+        #while not brokerSender.start_all_message:                                       # Wait for start signal
+        #    pass
 
         label = "Picking up dice block at conveyor 1"
 
