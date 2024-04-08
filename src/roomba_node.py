@@ -162,7 +162,7 @@ class Roomba(Node):
 
 
 	##############################################################################################
-	""" General ready status services and publishing stuff starts here """			
+	""" General ready status services and publishing starts here """			
 	##############################################################################################		
 	def ready_status_callback(self, msg):
 		"""
@@ -282,8 +282,7 @@ class Roomba(Node):
 	""" Robot-specific status checking starts here. """			
 	##############################################################################################
 
-	# IMPORTANT! Always set your robot's status before checking other robots
-	# NOTE: Always set crx10 statuses to False after picking up dice block
+	# IMPORTANT! Always set crx10 statuses to False after picking up dice block
 
 
 	def check_base2(self):
@@ -294,7 +293,8 @@ class Roomba(Node):
 		print("Check if beaker is ready at base2")
 		self.check_robot_status('beaker', True)
 
-		print("!!! Both robots are ready !!!")
+		print("!!! Both roomba_base2 and beaker are ready !!!")
+
 
 	def check_dice_block_handoff_base2(self):
 
@@ -304,29 +304,32 @@ class Roomba(Node):
 		print("Checking whether beaker has retrieved the block and moved away")
 		self.check_robot_status('beaker', False)
 
+		print("!!! beaker has retrieved dice block and moved away !!!")
+		print("\n Remember to set roomba_base2 to False. ")
+
+
+	def check_base3(self):
+
+		print("Setting roomba_base3 status to True")
+		self.set_roomba_base3_true()
+
+		print("Check if bunsen is ready at base3")
+		self.check_robot_status('bunsen', True)
+
+		print("!!! both roomba and bunsen are ready at base3 !!!")
+
+
+	def check_dice_block_handoff_base3(self):
+
+		print("Setting roomba_base3 status to True")
+		self.set_roomba_base3_true() # May be unneccessary since it should already be true
+
+		# Check whether beaker has retrieved the dice block and moved away
+		print("Checking whether bunsen has the block before moving to base1")
+		self.check_robot_status('bunsen', False)
+
 		print("!!! Both robots are ready !!!")
-
-
-	# def check_base3(self):
-
-	# 	print("Setting roomba_base3 status to True")
-	# 	self.set_roomba_base3_true()
-
-	# 	print("Check if bunsen is ready at base3")
-	# 	self.check_robot_status('bunsen', True)
-
-	# 	print("!!! Both robots are ready !!!")
-
-	# def check_dice_block_handoff_base3(self):
-
-	# 	print("Setting roomba_base3 status to True")
-	# 	self.set_roomba_base3_true() # May be unneccessary since it should already be true
-
-	# 	# Check whether beaker has retrieved the dice block and moved away
-	# 	print("Checking whether bunen has the block before moving to base1")
-	# 	self.check_robot_status('bunsen', False)
-
-	# 	print("!!! Both robots are ready !!!")
+		print("\n Remember to set roomba_base3 to False. ")
 
 
 
@@ -647,7 +650,7 @@ class Roomba(Node):
 
 			# self.drive_amnt(0.1)
 
-			
+
 			# self.check_base2()
 
 			# self.check_dice_block_handoff_base2()

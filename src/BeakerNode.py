@@ -190,19 +190,30 @@ class BeakerNode(Node):
 	""" Robot-specific status checking starts here. """			
 	##############################################################################################
 
-	# IMPORTANT! Always set your robot's status before checking other robots
-	# NOTE: Always set crx10 statuses to False after picking up dice block
+	# IMPORTANT! Always set crx10 statuses to False after picking up dice block
 
 	def check_roomba_base2(self):
 		# NOTE: Remember to set beaker status to False after picking up dice block!
 		print("Setting beaker status to True")
 		self.set_beaker_true()
+
 		print("Check if roomba is ready at base2")
-		self.check_robot_status('roomba', True)
+		self.check_robot_status('roomba_base2', True)
+
+		print("!!! Both roomba_base2 and beaker are ready !!!")
+		print("\n Remember to set beaker to False for the dice block handoff. ")
 
 	def check_bunsen_conv(self):
+		# NOTE: Remember to set beaker_conv to false after this function
+
+		print("Setting beaker_conv to true")
+		self.set_beaker_conv_true
+
 		print("Check if bunsen is ready at conveyor")
 		self.check_robot_status('bunsen_conv', True)
+
+		print("!!! Both beaker_conv and bunsen_conv are ready !!!")
+		print("\n Remember to set beaker_conv to False.")
 
 
 
@@ -236,7 +247,7 @@ if __name__ == '__main__':
 	print(" Press 'u' to set beaker_conv status as 'True'")
 	print(" Press 'h' to set beaker_conv status as 'False'")
 	print(" Press 'p' to manually publish the contents of the status text file")
-	
+
 	print(" Press '4' to call the service and check if roomba is ready at base2")
 	print(" Press '5' to call the service and check if bunsen is ready at the conveyor")
 
