@@ -85,13 +85,6 @@ class BeakerNode(Node):
 		print("End of RoombaNode callback \n")
 
 		self.latest_ready_status = msg
-		statuses = [None,None,None,None,None,None]
-		statuses[0] = msg.roomba_base2
-		statuses[1] = msg.beaker
-		statuses[2] = msg.beaker_conv
-		statuses[3] = msg.bunsen_conv
-		statuses[4] = msg.bunsen
-		statuses[5] = msg.roomba_base3
 
 		statuses = [
             str(msg.roomba_base2),
