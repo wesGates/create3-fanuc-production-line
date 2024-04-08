@@ -190,6 +190,12 @@ class FanucActions(Node):
         
         
     def cartMove(self, x, y, z, w, p, r):
+        
+        global action
+        
+        action = "cartMove_start"
+        self.reportSender()
+
         self.cart_ac.wait_for_server()
         cart_goal = CartPose.Goal()
         cart_goal.x = x
@@ -199,11 +205,17 @@ class FanucActions(Node):
         cart_goal.p = p
         cart_goal.r = r
         self.cart_ac.send_goal(cart_goal)
-        global action
-        action = "cartMove"
+
+        action = "cartMove_done"
         self.reportSender()
         
     def jointMove(self, j1, j2, j3, j4, j5, j6):
+        
+        global action
+
+        action = "jointMove_start"
+        self.reportSender()
+
         self.joint_ac.wait_for_server()
         joint_goal = JointPose.Goal()
         joint_goal.joint1 = j1
@@ -213,11 +225,17 @@ class FanucActions(Node):
         joint_goal.joint5 = j5
         joint_goal.joint6 = j6
         self.joint_ac.send_goal(joint_goal)
-        global action
-        action = "jointMove"
+
+        action = "jointMove_done"
         self.reportSender()
 
     def convMove(self, direction):
+        global action
+
+        action = "convMove_start"
+        self.reportSender()
+
+
         if direction == 'forward' or direction == 'reverse':
             isBeltMoving = True
         elif direction == 'stop':
@@ -226,11 +244,18 @@ class FanucActions(Node):
         conv_goal = Conveyor.Goal()
         conv_goal.command = direction
         self.conv_ac.send_goal(conv_goal)
-        global action
-        action = "convMove"
+
+        action = "convMove_done"
         self.reportSender()
     	
     def schunkMove(self, type):
+
+        global action
+        
+        action = "gripperMove_start"
+        self.reportSender()
+
+
         if type == 'open':
             isGripped = False
         elif type == 'close':
@@ -239,8 +264,8 @@ class FanucActions(Node):
         schunk_goal = SchunkGripper.Goal()
         schunk_goal.command = type
         self.schunk_ac.send_goal(schunk_goal)
-        global action
-        action = "gripperMove"
+
+        action = "gripperMove_done"
         self.reportSender()
 
     def taskBeaker(self):
