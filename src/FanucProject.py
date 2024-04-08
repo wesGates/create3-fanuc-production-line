@@ -20,6 +20,7 @@ from fanuc_interfaces.action import CartPose, SchunkGripper, JointPose, Conveyor
 from fanuc_interfaces.msg import CurGripper, CurCartesian, CurJoints, ProxReadings, IsMoving
 
 from BeakerNode import BeakerNode
+from BunsenNode import BunsenNode
 
 import time
 from time import sleep
@@ -27,10 +28,10 @@ from time import sleep
 from datetime import datetime
 import json
 
-import threading
+#import threading
 
-import brokerSender
-from brokerSender import mqttc
+#import brokerSender
+#from brokerSender import mqttc
 
 #namespace = 'beaker'
 topic = "vandalrobot"
@@ -53,6 +54,7 @@ position = [[],[]]
 fault = ""
 
 nodeBeaker = BeakerNode()
+nodeBunsen = BunsenNode()
 
 # Node that listens to the fanuc topic
 class FanucTopic(Node):
@@ -221,8 +223,8 @@ class FanucActions(Node):
         
         self.cartMove(618.352, 1.623, -83.733, -179.284, -2.058, -59.679)               # Home
         
-        while not brokerSender.start_all_message:                                      # Wait for start signal
-            pass
+        #while not brokerSender.start_all_message:                                      # Wait for start signal
+        #    pass
 
         label = "Picking up dice block at base 2"
 
@@ -283,29 +285,32 @@ class FanucActions(Node):
     def taskBunsen(self):
         global label, action, fault, withDice
 
-        self.cartMove() # Home
+        self.cartMove(568.058, -75.22, 19.527, -179.637, 1.597, 29.106)                 # Home
+        self.schunkMove('open')
 
-        while not brokerSender.start_all_message:                                      # Wait for start signal
-            pass
+        #while not brokerSender.start_all_message:                                       # Wait for start signal
+        #    pass
 
         label = "Picking up dice block at conveyor 1"
 
-        self.cartMove() # Conveyor 1 approach end
+        self.cartMove(75.396, -831.926, -151.291, -178.373, -0.332, 26.7)               # Conveyor 1 approach end
         
         # Wait for ready at conveyor 1
 
-        self.cartMove() # Conveyor 1 pickup end
+        self.cartMove(75.396, -831.926, -196.291, -178.373, -0.332, 26.7)               # Conveyor 1 pickup end
 
         label = "Moving dice block from conveyor 1 to conveyor 2"
         withDice = True
         self.schunkMove('close')
 
-        self.cartMove() # Conveyor 1 approach end
-        self.cartMove() # Conveyor 2 approach start
-        self.cartMove() # Conveyor 2 drop start
+        self.cartMove(75.396, -831.926, -92.912, -178.373, -0.332, 26.7)                # Conveyor 1 approach end
+        self.cartMove(757.469, -580.225, -92.912, 179.72, -0.016, 27.315)               # Conveyor 2 approach start
+        self.cartMove(765.349, -578.817, -197.217, -178.602, 2.568, 28.922)             # Conveyor 2 drop start
 
         withDice = False
         self.schunkMove('open')
+
+        self.cartMove(757.469, -580.225, -92.912, 179.72, -0.016, 27.315)               # Conveyor 2 approach start
 
         label = "Moving conveyor 2"
 
@@ -315,17 +320,20 @@ class FanucActions(Node):
 
         label = "Picking up dice block at conveyor 2"
 
-        self.cartMove() # Conveyor 2 approach start
-        self.cartMove() # Conveyor 2 approach end
+        #self.cartMove(79.57, -577.628, -92.912, -179.983, 0.628, 26.238)                # Conveyor 2 approach end
+        self.jointMove(-64.732, 20.007, -51.662, 3.396, -43.347, 90.833) #-89.167
 
         # Wait for ready at conveyor 2
 
-        self.cartMove() # Conveyor 2 pickup end
+        #self.cartMove(79.57, -577.628, -197.217, -179.983, 0.628, 26.238)               # Conveyor 2 pickup end
+        self.jointMove(-66.542, 22.921, -55.153, 0.066, -38.991, 94.762) #-85.238
 
         withDice = True
         self.schunkMove('close')
 
-        self.cartMove() # Conveyor 2 approach end
+        #self.cartMove(79.57, -577.628, -92.912, -179.983, 0.628, 26.238)                # Conveyor 2 approach end
+        #self.jointMove(-64.732, 20.007, -51.662, 3.396, -43.347, 90.833) #-89.167
+        self.jointMove(-67.273, 10.367, -42.081, 4.478, -49.211, 90.262)
 
         label = "Dice block flip"
 
@@ -340,22 +348,24 @@ class FanucActions(Node):
         label = "Moving dice block to base 3"
         self.schunkMove('close')
 
-        self.cartMove() # Avoid table
-        self.jointMove() # Dock 3 approach
+        #self.cartMove(363.496, 609.175, -83.366, 179.96, -6.23, 16.058)                 # Avoid table
+        self.jointMove(57.792, 11.879, -30.824, -9.696, -38.583, -63.616)
+        self.jointMove(109.054, 88.629, -98.042, -15.913, 7.339, -66.288)               # Dock 3 approach
 
         # Check create3 ready status
 
-        self.jointMove() # Dock 3 drop
+        self.jointMove(109.056, 95.089, -97.762, -15.906, 6.841, -65.237)               # Dock 3 drop
 
         withDice = False
         self.schunkMove('open')
 
-        self.jointMove() # Dock 3 approach
+        self.jointMove(109.054, 88.629, -98.042, -15.913, 7.339, -66.288)               # Dock 3 approach
 
         # Ready for create3 to leave dock 3
 
-        self.cartMove() # Avoid table
-        self.cartMove() # Home
+        #self.cartMove(363.496, 609.175, -83.366, 179.96, -6.23, 16.058)                 # Avoid table
+        self.jointMove(57.792, 11.879, -30.824, -9.696, -38.583, -63.616)
+        self.cartMove(568.058, -75.22, 19.527, -179.637, 1.597, 29.106)                 # Home
 
 
     def convMoveBlock(self):
@@ -370,18 +380,19 @@ class FanucActions(Node):
         self.convMove('stop')
 
     def test(self):
-        self.convMove('forward')
+        #self.convMove('forward')
         #self.schunkMove('open')
         #self.cartMove(618.352, 1.623, -83.733, -179.284, -2.058, -59.679)
-        sleep(2)
-        self.convMove('stop')
+        #sleep(2)
+        #self.convMove('stop')
         #self.schunkMove('close')
 
         #self.reportSender()
         #if beltSensorFront == True:
         #self.convMoveBlock()
         #self.nodeBeaker.check_roomba_base2()
-        #self.cartMove(791.903, 643.183, -53.923, 178.571, 0.950, 30.197)
+        #self.cartMove(79.57, -577.628, -92.912, -179.983, 0.628, 26.238)
+        self.jointMove(-64.732, 20.007, -51.662, 3.396, -43.347, 90.833)
 
 
 def stop_all(exec,robot,rclpy):
@@ -402,20 +413,20 @@ if __name__ == '__main__':
 
     exec = MultiThreadedExecutor(8)
 
-    broker_thread = threading.Thread(target=mqttc.loop_start)
-    broker_thread.start()
+    #broker_thread = threading.Thread(target=mqttc.loop_start)
+    #broker_thread.start()
  
-    stop_threadBeaker = threading.Thread(target=stop_all,args=(exec,mainBeaker,rclpy))
-    stop_threadBeaker.start()
-    stop_threadBunsen = threading.Thread(target=stop_all,args=(exec,mainBunsen,rclpy))
-    stop_threadBunsen.start()
+    #stop_threadBeaker = threading.Thread(target=stop_all,args=(exec,mainBeaker,rclpy))
+    #stop_threadBeaker.start()
+    #stop_threadBunsen = threading.Thread(target=stop_all,args=(exec,mainBunsen,rclpy))
+    #stop_threadBunsen.start()
 
     # Add our nodes
     exec.add_node(mainBeaker)
     exec.add_node(listenerBeaker)
     exec.add_node(mainBunsen)
     exec.add_node(listenerBunsen)
-    mqttc.loop_start()
+    #mqttc.loop_start()
     
     # This allows us to start the function once the node is spinning
     keycom = KeyCommander([(KeyCode(char='s'), mainBeaker.taskBeaker),])
