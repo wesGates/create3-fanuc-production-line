@@ -3,7 +3,6 @@ from rclpy.node import Node
 from rclpy.executors import MultiThreadedExecutor
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 
-
 import time
 import sys
 sys.path.append("../dependencies/")

@@ -1,6 +1,11 @@
 import json
 import paho.mqtt.client as mqtt
 
+start_all_message = False
+
+stop_all_message = False
+
+
 def on_connect(client, userdata, flags, reason_code):
 
     print(f"Connected with result code {reason_code}")
@@ -11,6 +16,8 @@ def on_connect(client, userdata, flags, reason_code):
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
+    global start_all_message
+    global stop_all_message
     print(msg.topic+" "+str(msg.payload))
     payload= json.loads(msg.payload)
     if "requestMessage" in payload and  "brokerManager" in payload and payload['brokerManager']:
@@ -22,6 +29,15 @@ def on_message(client, userdata, msg):
                 "productLine":"moscow", # e.g. moscow, cda
                 }
             mqttc.publish(topic, json.dumps(message))
+    
+    if "status" in payload and  "brokerManager" in payload and payload['brokerManager']:
+        if payload["status"] =='start.all.node' :
+            
+            start_all_message=True
+        if payload["status"] =='stop.all.node' :
+            
+            stop_all_message=True
+    
 
 mqttc = mqtt.Client()
 mqttc.on_connect = on_connect
