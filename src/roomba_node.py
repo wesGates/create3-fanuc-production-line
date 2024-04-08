@@ -629,15 +629,9 @@ class Roomba(Node):
 
 
 	
-
-
-
-
 	def takeoff(self):
 		try:
 		
-			
-			
 			
 			while not brokerSender.start_all_message :
 				# print(brokerSender.start_all_message)
@@ -653,6 +647,7 @@ class Roomba(Node):
 
 			# self.drive_amnt(0.1)
 
+			
 			# self.check_base2()
 
 			# self.check_dice_block_handoff_base2()

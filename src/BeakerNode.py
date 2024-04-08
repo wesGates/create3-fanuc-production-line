@@ -64,7 +64,9 @@ class BeakerNode(Node):
 		# Ready statuses are updated in the callback functions.
 		self.latest_ready_status = None
 
-
+	##############################################################################################
+	""" General ready status services and publishing stuff starts here """			
+	##############################################################################################
 	def ready_status_callback(self, msg):
 		"""
 		The other nodes don't have this function, yet. 
@@ -184,52 +186,6 @@ class BeakerNode(Node):
 				time.sleep(1)  # Wait for a bit before retrying in case of an exception
 
 
-
-	def wait_for_ready(self, robot_status_expectations):
-		"""
-		Waits for the specified robots to reach the desired ready status.
-
-		:param robot_status_expectations: A dictionary with robot names as keys and expected statuses (True/False) as values.
-		
-		Ex) This example function call waits for the 'roomba' status to be False, and 'beaker' to be True:
-		node.wait_for_ready({'roomba': False, 'beaker': True})
-
-		NOTE: Always set your robot's status to the status you are calling before calling this function.
-		^ If you call 'beaker': True, be sure to set beaker to True before calling this function or you will get stuck
-		NOTE: Be aware this function is GPT-generated.
-		"""
-
-		print("Waiting for specific ready statuses...")
-		timeout = 100  # Timeout for the overall waiting
-		check_interval = 1.0  # Time to wait in spin_once for new messages
-		start_time = time.time()
-
-
-		while time.time() - start_time < timeout:
-			# Process incoming messages and wait up to 'check_interval' seconds for new ones
-			rclpy.spin_once(self, timeout_sec=check_interval)
-			
-			if self.latest_ready_status:
-				# Print current statuses for printing
-				current_statuses = {robot: getattr(self.latest_ready_status, robot.lower(), None) 
-									for robot in robot_status_expectations.keys()}
-				print(f"\n Current statuses: {current_statuses}")
-
-				# Check if the desired status is achieved
-				status_check = all(getattr(self.latest_ready_status, robot.lower()) == status 
-								for robot, status in robot_status_expectations.items())
-
-				if status_check:
-					print(f"\n !!! All specified robots have reached the expected ready statuses !!!")
-					return
-				else:
-					statuses = ', '.join([f"{robot} is {'True' if status else 'False'}" for robot, status in robot_status_expectations.items()])
-					print(f"       Waiting for: {statuses}...")
-			else:
-				print("\n Waiting for the first status update...")
-
-		print("Timeout reached without all specified robots reaching the expected ready statuses.")
-
 	##############################################################################################
 	""" Robot-specific status checking starts here. """			
 	##############################################################################################
@@ -280,6 +236,7 @@ if __name__ == '__main__':
 	print(" Press 'u' to set beaker_conv status as 'True'")
 	print(" Press 'h' to set beaker_conv status as 'False'")
 	print(" Press 'p' to manually publish the contents of the status text file")
+	
 	print(" Press '4' to call the service and check if roomba is ready at base2")
 	print(" Press '5' to call the service and check if bunsen is ready at the conveyor")
 
