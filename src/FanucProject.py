@@ -115,8 +115,11 @@ class FanucTopic(Node):
 class FanucActions(Node):
     def __init__(self, namespace):
         super().__init__("robotActions")
+        self.namespace = namespace
         if namespace == 'beaker':
             self.nodeBeaker = nodeBeaker
+        if namespace == 'bunsen':
+            self.nodeBunsen = nodeBunsen
 
 		# Actions, note their callback groups
         self.cart_ac = ActionClient(self, CartPose, f'/{namespace}/cartesian_pose')
@@ -136,11 +139,34 @@ class FanucActions(Node):
         Used to send a report at the beginning and end of every action.
         Defaults to False.
         """
-
-        data = {
+        if self.namespace == 'beaker':
+            data = {
             "messageType": "Report",
             "node": "crx10",
             "nodeId": "bryancrx10_1",
+            "productLine": "moscow",
+            "crx10report":{
+                "label":label,
+                "action":action,
+                "isHome":isHome,
+                "CRX10Ready":ready,
+                "withDice":withDice,
+                "ismoving":isMoving,
+                "isGripped":isGripped,
+                "position":position,
+                "isBeltmoving":isBeltMoving,
+                "lineSensorBackBelt":beltSensorRear,
+                "lineSensorFrontBelt":beltSensorFront,
+                "convReady":convReady,
+                "Fault": fault
+            },
+            "date": str(datetime.now())
+        }
+        if self.namespace == 'bunsen':
+            data = {
+            "messageType": "Report",
+            "node": "crx10",
+            "nodeId": "bryancrx10_2",
             "productLine": "moscow",
             "crx10report":{
                 "label":label,
@@ -295,7 +321,7 @@ class FanucActions(Node):
 
         self.cartMove(75.396, -831.926, -151.291, -178.373, -0.332, 26.7)               # Conveyor 1 approach end
         
-        # Wait for ready at conveyor 1
+        #self.nodeBunsen.check_beaker_conv()                                             # Wait for ready at conveyor 1
 
         self.cartMove(75.396, -831.926, -196.291, -178.373, -0.332, 26.7)               # Conveyor 1 pickup end
 
@@ -314,9 +340,9 @@ class FanucActions(Node):
 
         label = "Moving conveyor 2"
 
-        # Set bunsen conv false
+        #self.nodeBunsen.set_bunsen_conv_false()                                         # Set bunsen conv false
         self.convMoveBlock()
-        # Set bunsen conv true
+        #self.nodeBunsen.set_bunsen_conv_true()                                          # Set bunsen conv true
 
         label = "Picking up dice block at conveyor 2"
 
@@ -352,7 +378,7 @@ class FanucActions(Node):
         self.jointMove(57.792, 11.879, -30.824, -9.696, -38.583, -63.616)
         self.jointMove(109.054, 88.629, -98.042, -15.913, 7.339, -66.288)               # Dock 3 approach
 
-        # Check create3 ready status
+        #self.nodeBunsen.check_roomba_base3()                                            # Check create3 ready status
 
         self.jointMove(109.056, 95.089, -97.762, -15.906, 6.841, -65.237)               # Dock 3 drop
 
@@ -361,7 +387,7 @@ class FanucActions(Node):
 
         self.jointMove(109.054, 88.629, -98.042, -15.913, 7.339, -66.288)               # Dock 3 approach
 
-        # Ready for create3 to leave dock 3
+        #self.nodeBunsen.set_bunsen_false()                                              # Ready for create3 to leave dock 3
 
         #self.cartMove(363.496, 609.175, -83.366, 179.96, -6.23, 16.058)                 # Avoid table
         self.jointMove(57.792, 11.879, -30.824, -9.696, -38.583, -63.616)
