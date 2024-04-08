@@ -184,7 +184,8 @@ class RoombaNode(Node):
 		print("Check if beaker is ready at base2")
 		self.check_robot_status('beaker', True)
 
-		print("!!! Both robots are ready !!!")
+		print("!!! Both roomba_base2 and beaker are ready !!!")
+
 
 	def check_dice_block_handoff_base2(self):
 
@@ -194,7 +195,8 @@ class RoombaNode(Node):
 		print("Checking whether beaker has retrieved the block and moved away")
 		self.check_robot_status('beaker', False)
 
-		print("!!! Both robots are ready !!!")
+		print("!!! beaker has retrieved dice block and moved away !!!")
+		print("\n Remember to set roomba_base2 to False. ")
 
 
 	def check_base3(self):
@@ -205,7 +207,8 @@ class RoombaNode(Node):
 		print("Check if bunsen is ready at base3")
 		self.check_robot_status('bunsen', True)
 
-		print("!!! Both robots are ready !!!")
+		print("!!! both roomba and bunsen are ready at base3 !!!")
+
 
 	def check_dice_block_handoff_base3(self):
 
@@ -213,10 +216,11 @@ class RoombaNode(Node):
 		self.set_roomba_base3_true() # May be unneccessary since it should already be true
 
 		# Check whether beaker has retrieved the dice block and moved away
-		print("Checking whether bunen has the block before moving to base1")
+		print("Checking whether bunsen has the block before moving to base1")
 		self.check_robot_status('bunsen', False)
 
 		print("!!! Both robots are ready !!!")
+		print("\n Remember to set roomba_base3 to False. ")
 
 
 	def main(self):
