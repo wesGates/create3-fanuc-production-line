@@ -8,7 +8,8 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from rclpy.action.client import ActionClient
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from std_msgs.msg import Header, String, Int32, Float32, UInt8, Int16,Bool # Some topics have specific datatypes (POTENTIALLY USELESS!!!)
-import brokerSender
+
+
 import time
 import sys
 sys.path.append("../dependencies/")
@@ -40,7 +41,7 @@ from threading import RLock
 import threading
 
 # Broker
-# import paho.mqtt.client as mqtt
+import brokerSender
 from brokerSender import mqttc
 
 # Node Imports
@@ -83,78 +84,26 @@ odometry_sensor = OdomNode(namespace)
 ready_status_publisher_node = ReadyStatusPublisherNode()
 readiness_tracker_node = ReadinessTrackerNode()
 
-class Roomba(Node):
-	def __init__(self, namespace):
-		super().__init__('roomba_node')
+class RoombaTopic(Node):
+	def __init__(self):
+		super().__init__('roomba_topic_node')
 		self.status_file_path = 'robot_status.txt'
-
-
-		# Initialize node objects within the class for node operations
-		self.dock_sensor = dock_sensor
-		self.ir_sensor = ir_sensor
-		self.odometry_sensor = odometry_sensor
-
 		self.ready_status_publisher_node = ready_status_publisher_node
 		self.readiness_tracker_node = readiness_tracker_node
 
-		# Subscriptions: 
-		# Split up to compensate for noisy subscriptions
-		cb_dockstatus = MutuallyExclusiveCallbackGroup() # Perhaps unneeded since the dock_status_node takes care of the dockstatus
-		cb_ir = MutuallyExclusiveCallbackGroup()
-		cb_pose = MutuallyExclusiveCallbackGroup()
+
 		cb_ready_status = MutuallyExclusiveCallbackGroup()
-
-
-		self.dock_status_sub_ = self.create_subscription(Bool, f'/{namespace}/check_dock_status', 
-												self.dock_status_callback, 10, callback_group=cb_dockstatus)
-
-		self.ir_opcode_sub_ = self.create_subscription(String, f'/{namespace}/ir_opcode_number', 
-														self.ir_opcode_callback, qos_profile_sensor_data, callback_group=cb_ir)
-
-		self.current_pose_sub_ = self.create_subscription(PoseStamped, f'/{namespace}/pose_stamped', 
-												self.pose_callback, qos_profile_sensor_data, callback_group=cb_pose)
 
 		self.ready_status_subscription_ = self.create_subscription(ReadyStatus, 'robot_ready_status', 
 												self.ready_status_callback, 10, callback_group=cb_ready_status)
 		
-
-		# Actions:
-		cb_Action = MutuallyExclusiveCallbackGroup()
-		cb_chirp  = MutuallyExclusiveCallbackGroup()
-
-		self.dock_ac = ActionClient(self, Dock, f'/{namespace}/dock',
-							  				callback_group=cb_Action)
-		self.undock_ac = ActionClient(self, Undock, f'/{namespace}/undock',
-								 			callback_group=cb_Action)
-		self.drive_ac = ActionClient(self, DriveDistance, f'/{namespace}/drive_distance', 
-							   				callback_group=cb_Action)
-		self.nav_to_pos_ac = ActionClient(self, NavigateToPosition, f'/{namespace}/navigate_to_position', 
-											callback_group=cb_Action)
-		self.audio_ac = ActionClient(self, AudioNoteSequence, f'/{namespace}/audio_note_sequence', 
-											callback_group=cb_chirp)
-		self.rotate_ac = ActionClient(self, RotateAngle, f'/{namespace}/rotate_angle', 
-											callback_group=cb_Action)
 		
-		# Services:
-		# ResetPose service client and initialize PoseStamped variable for position reset using odometry
-		self.reset_pose_srv = self.create_client(ResetPose, f'/{namespace}/reset_pose')
-		
-		# Ensure service is available
-		while not self.reset_pose_srv.wait_for_service(timeout_sec=1.0):
-			self.get_logger().info('ResetPose service not available, waiting again...')
-
 		# Service for checking the status of any robot
 		self.client = self.create_client(CheckReadiness, 'check_readiness')
 
 		while not self.client.wait_for_service(timeout_sec=1.0):
 			self.get_logger().info('Service not available, waiting again...')
-		print("Readiness Tracker is Available. ")
-
-		# Variable Initialization
-		self.latest_dock_status = True #########!!!!!!!!!!!!! Was None
-		self.latest_pose_stamped = None
-		self.latest_ir_opcode = None
-		self.ir_opcode_history = deque(maxlen=20)  # A deque to store the history of opcodes in the auto-docking function
+		print("Readiness Tracker is Available. ")		
 
 		# variable that stores the robot ready status information
 		# Ready statuses are updated in the callback functions.
@@ -331,6 +280,74 @@ class Roomba(Node):
 		print("!!! Both robots are ready !!!")
 		print("\n Remember to set roomba_base3 to False. ")
 
+
+
+
+
+class Roomba(Node):
+	def __init__(self, namespace):
+		super().__init__('roomba_node')
+
+
+
+		# Initialize node objects within the class for node operations
+		self.dock_sensor = dock_sensor
+		self.ir_sensor = ir_sensor
+		self.odometry_sensor = odometry_sensor
+
+
+
+		# Subscriptions: 
+		# Split up to compensate for noisy subscriptions
+		cb_dockstatus = MutuallyExclusiveCallbackGroup() # Perhaps unneeded since the dock_status_node takes care of the dockstatus
+		cb_ir = MutuallyExclusiveCallbackGroup()
+		cb_pose = MutuallyExclusiveCallbackGroup()
+
+
+
+		self.dock_status_sub_ = self.create_subscription(Bool, f'/{namespace}/check_dock_status', 
+												self.dock_status_callback, 10, callback_group=cb_dockstatus)
+
+		self.ir_opcode_sub_ = self.create_subscription(String, f'/{namespace}/ir_opcode_number', 
+														self.ir_opcode_callback, qos_profile_sensor_data, callback_group=cb_ir)
+
+		self.current_pose_sub_ = self.create_subscription(PoseStamped, f'/{namespace}/pose_stamped', 
+												self.pose_callback, qos_profile_sensor_data, callback_group=cb_pose)
+
+
+
+		# Actions:
+		cb_Action = MutuallyExclusiveCallbackGroup()
+		cb_chirp  = MutuallyExclusiveCallbackGroup()
+
+		self.dock_ac = ActionClient(self, Dock, f'/{namespace}/dock',
+							  				callback_group=cb_Action)
+		self.undock_ac = ActionClient(self, Undock, f'/{namespace}/undock',
+								 			callback_group=cb_Action)
+		self.drive_ac = ActionClient(self, DriveDistance, f'/{namespace}/drive_distance', 
+							   				callback_group=cb_Action)
+		self.nav_to_pos_ac = ActionClient(self, NavigateToPosition, f'/{namespace}/navigate_to_position', 
+											callback_group=cb_Action)
+		self.audio_ac = ActionClient(self, AudioNoteSequence, f'/{namespace}/audio_note_sequence', 
+											callback_group=cb_chirp)
+		self.rotate_ac = ActionClient(self, RotateAngle, f'/{namespace}/rotate_angle', 
+											callback_group=cb_Action)
+		
+		# Services:
+		# ResetPose service client and initialize PoseStamped variable for position reset using odometry
+		self.reset_pose_srv = self.create_client(ResetPose, f'/{namespace}/reset_pose')
+		
+		# Ensure service is available
+		while not self.reset_pose_srv.wait_for_service(timeout_sec=1.0):
+			self.get_logger().info('ResetPose service not available, waiting again...')
+
+
+
+		# Variable Initialization
+		self.latest_dock_status = True #########!!!!!!!!!!!!! Was None
+		self.latest_pose_stamped = None
+		self.latest_ir_opcode = None
+		self.ir_opcode_history = deque(maxlen=20)  # A deque to store the history of opcodes in the auto-docking function
 
 
 	def reportSender(self, label="Undefined", action="Undefined",
@@ -517,13 +534,19 @@ class Roomba(Node):
 	def rotate_amnt(self, angle):
 		print("Rotating amount:", angle, "rad")
 		self.chirp(start_note)
+		print("1")
 		self.rotate_ac.wait_for_server()
+		print("2")
 		rotate_goal = RotateAngle.Goal()
+		print("3")
 		rotate_goal.angle = angle
-		self.rotate_ac.send_goal(rotate_goal)
+		print("4: Sending goal")
+		self.rotate_ac.send_goal(rotate_goal) # !!!!!! Getting stuck here!
 		
+		print("DB: Sending goal")
 		time.sleep(1)  # Consider using async
 		self.chirp(end_note)
+		print("DB: After chirp")
 
 
 	def rotate_amnt_async(self, angle):
@@ -653,147 +676,157 @@ class Roomba(Node):
 			""" Run a simulated BeakerNode and BunsenNode for toggling ready statuses """			
 			##############################################################################################			
 
+			# t = 1.0
 			
-			self.drive_amnt(0.2)
-			self.check_base2()
-			self.check_dice_block_handoff_base2()
-			self.set_roomba_base2_false()
+			# self.drive_amnt(0.2)
+			# roomba_statuses.check_base2()
+			# # self.check_dice_block_handoff_base2()
+			# # self.set_roomba_base2_false()
+			# time.sleep(t)
 
-			print("MOVING TO BASE3")
+			# print("\n MOVING TO BASE3")
+			# self.rotate_amnt(pi/2)
+			# time.sleep(t)
+			# roomba_statuses.check_base3()
+			# roomba_statuses.check_dice_block_handoff_base3()
+			# roomba_statuses.set_roomba_base3_false()
+			# # time.sleep(t)
+
+			# print("\n MOVING TO BASE 1")
+			# self.rotate_amnt(pi)
+			# time.sleep(t)
+			# self.drive_amnt(0.2)
+			# time.sleep(t)
+			# self.dock()
+
+
+			# ##############################################################################################
+			##############################################################################################			
+
+			### Actions for process 1: Navigating from base1 to base 2 ###
+			# Undock and reset pose
+			self.reportSender(label=roomba_label_1, action="undock_start", isAtBase1=True, isMoving=False)
+			self.undock()
+			self.reportSender(roomba_label_1, action="undock_done", isAtBase1=False, isMoving=True)
+
+			# rotate amount
+			self.reportSender(roomba_label_1, action="rotate_start", isMoving=True)
+			self.rotate_amnt(-pi/2)
+			self.reportSender(roomba_label_1, action="rotate_done", isMoving=True)
+
+			# drive amount
+			self.reportSender(roomba_label_1, action="drive_start", isMoving=True)
+			self.drive_amnt(1.3)
+			self.reportSender(roomba_label_1, action="drive_done", isMoving=True)
+
+			# rotate amount
+			self.reportSender(roomba_label_1, action="rotate_start", isMoving=True)
 			self.rotate_amnt(pi/2)
-			self.drive_amnt(0.2)
-			self.check_base3()
-			self.check_dice_block_handoff_base3()
-			self.set_roomba_base3_false()
+			self.reportSender(roomba_label_1, action="rotate_done", isMoving=True)
 
-			print("MOVING TO BASE 1")
-			self.rotate_amnt(pi)
-			self.drive_amnt(0.2)
+			# drive amount
+			self.reportSender(roomba_label_1, action="drive_start", isMoving=True)
+			self.drive_amnt(2.0)
+			self.reportSender(roomba_label_1, action="drive_done", isMoving=True)
+
+			# dock
+			self.reportSender(roomba_label_1, action="dock_start", isMoving=True)
 			self.dock()
-
-
-
-
-			# ### Actions for process 1: Navigating from base1 to base 2 ###
-			# # Undock and reset pose
-			# self.reportSender(label=roomba_label_1, action="undock_start", isAtBase1=True, isMoving=False)
-			# self.undock()
-			# self.reportSender(roomba_label_1, action="undock_done", isAtBase1=False, isMoving=True)
-
-			# # rotate amount
-			# self.reportSender(roomba_label_1, action="rotate_start", isMoving=True)
-			# self.rotate_amnt(-pi/2)
-			# self.reportSender(roomba_label_1, action="rotate_done", isMoving=True)
-
-			# # drive amount
-			# self.reportSender(roomba_label_1, action="drive_start", isMoving=True)
-			# self.drive_amnt(1.3)
-			# self.reportSender(roomba_label_1, action="drive_done", isMoving=True)
-
-			# # rotate amount
-			# self.reportSender(roomba_label_1, action="rotate_start", isMoving=True)
-			# self.rotate_amnt(pi/2)
-			# self.reportSender(roomba_label_1, action="rotate_done", isMoving=True)
-
-			# # drive amount
-			# self.reportSender(roomba_label_1, action="drive_start", isMoving=True)
-			# self.drive_amnt(2.0)
-			# self.reportSender(roomba_label_1, action="drive_done", isMoving=True)
-
-			# # dock
-			# self.reportSender(roomba_label_1, action="dock_start", isMoving=True)
-			# self.dock()
-			# self.reportSender(roomba_label_1, action="dock_done", isMoving=False, isAtBase2=True)
-			# time.sleep(3)  
+			self.reportSender(roomba_label_1, action="dock_done", isMoving=False, isAtBase2=True)
+			time.sleep(3)  
 			
 
-			# # Wait for beaker to be ready before proceeding
-			# self.check_base2()
+			# Wait for beaker to be ready before proceeding
+			roomba_statuses.check_base2()
 
-			# # Wait for beaker to get the block
-			# self.check_dice_block_handoff_base2()
+			# Wait for beaker to get the block
+			roomba_statuses.check_dice_block_handoff_base2()
+
+			roomba_statuses.set_roomba_base2_false()
 			
 
-			# ### Actions for process 2: Navigating to base3 from base2 ###
-			# self.reportSender(roomba_label_2, action="undock_start", isAtBase2=True, isMoving=False)
-			# self.undock()
-			# self.reportSender(roomba_label_2, action="undock_done", isAtBase2=False, isMoving=True)
+			### Actions for process 2: Navigating to base3 from base2 ###
+			self.reportSender(roomba_label_2, action="undock_start", isAtBase2=True, isMoving=False)
+			self.undock()
+			self.reportSender(roomba_label_2, action="undock_done", isAtBase2=False, isMoving=True)
 
-			# # drive amount
-			# self.reportSender(roomba_label_2, action="drive_start", isMoving=True)
-			# self.drive_amnt(2.65)
-			# self.reportSender(roomba_label_2, action="drive_done", isMoving=True)
+			# drive amount
+			self.reportSender(roomba_label_2, action="drive_start", isMoving=True)
+			self.drive_amnt(2.65)
+			self.reportSender(roomba_label_2, action="drive_done", isMoving=True)
 
-			# # rotate amount
-			# self.reportSender(roomba_label_2, action="rotate_start", isMoving=True)
-			# self.rotate_amnt(pi/2)
-			# self.reportSender(roomba_label_2, action="rotate_done", isMoving=True)
+			# rotate amount
+			self.reportSender(roomba_label_2, action="rotate_start", isMoving=True)
+			self.rotate_amnt(pi/2)
+			self.reportSender(roomba_label_2, action="rotate_done", isMoving=True)
 
-			# # drive amount
-			# self.reportSender(roomba_label_2, action="drive_start", isMoving=True)
-			# self.drive_amnt(2.75)
-			# self.reportSender(roomba_label_2, action="drive_done", isMoving=True)
+			# drive amount
+			self.reportSender(roomba_label_2, action="drive_start", isMoving=True)
+			self.drive_amnt(2.75)
+			self.reportSender(roomba_label_2, action="drive_done", isMoving=True)
 
-			# # rotate amount
-			# self.reportSender(roomba_label_2, action="rotate_start", isMoving=True)
-			# self.rotate_amnt(pi/2)
-			# self.reportSender(roomba_label_2, action="rotate_done", isMoving=True)
+			# rotate amount
+			self.reportSender(roomba_label_2, action="rotate_start", isMoving=True)
+			self.rotate_amnt(pi/2)
+			self.reportSender(roomba_label_2, action="rotate_done", isMoving=True)
 
-			# # drive amount
-			# self.reportSender(roomba_label_2, action="drive_start", isMoving=True)
-			# self.drive_amnt(2.5)
-			# self.reportSender(roomba_label_2, action="drive_done", isMoving=True)
+			# drive amount
+			self.reportSender(roomba_label_2, action="drive_start", isMoving=True)
+			self.drive_amnt(2.5)
+			self.reportSender(roomba_label_2, action="drive_done", isMoving=True)
 
-			# # dock
-			# self.reportSender(roomba_label_2, action="dock_start", isMoving=True)
-			# self.dock()
-			# self.reportSender(roomba_label_2, action="dock_done", isMoving=False, isAtBase3=True)
+			# dock
+			self.reportSender(roomba_label_2, action="dock_start", isMoving=True)
+			self.dock()
+			self.reportSender(roomba_label_2, action="dock_done", isMoving=False, isAtBase3=True)
 
-			### !!! Logic for communicating ready statuses goes here
+			## !!! Logic for communicating ready statuses goes here
    
-			# self.check_base3()
-			# self.check_dice_block_handoff_base3()
+			roomba_statuses.check_base3()
+			roomba_statuses.check_dice_block_handoff_base3()
+			roomba_statuses.set_roomba_base3_false()
 
 
-			# ### Actions for process 3: Navigating to base1 from base3 ###
-			# self.reportSender(roomba_label_3, action="undock_start", isAtBase3=True, isMoving=False)
-			# self.undock()
-			# self.reportSender(roomba_label_3, action="undock_done", isAtBase3=False, isMoving=True)
 
-			# # drive amount
-			# self.reportSender(roomba_label_3, action="drive_start", isMoving=True)
-			# self.drive_amnt(2.65)
-			# self.reportSender(roomba_label_3, action="drive_done", isMoving=True)
+			### Actions for process 3: Navigating to base1 from base3 ###
+			self.reportSender(roomba_label_3, action="undock_start", isAtBase3=True, isMoving=False)
+			self.undock()
+			self.reportSender(roomba_label_3, action="undock_done", isAtBase3=False, isMoving=True)
 
-			# # rotate amount
-			# self.reportSender(roomba_label_3, action="rotate_start", isMoving=True)
-			# self.rotate_amnt(-pi/2)
-			# self.reportSender(roomba_label_3, action="rotate_done", isMoving=True)
+			# drive amount
+			self.reportSender(roomba_label_3, action="drive_start", isMoving=True)
+			self.drive_amnt(2.65)
+			self.reportSender(roomba_label_3, action="drive_done", isMoving=True)
 
-			# # drive amount
-			# self.reportSender(roomba_label_3, action="drive_start", isMoving=True)
-			# self.drive_amnt(2.60)
-			# self.reportSender(roomba_label_3, action="drive_done", isMoving=True)
+			# rotate amount
+			self.reportSender(roomba_label_3, action="rotate_start", isMoving=True)
+			self.rotate_amnt(-pi/2)
+			self.reportSender(roomba_label_3, action="rotate_done", isMoving=True)
 
-			# # rotate amount
-			# self.reportSender(roomba_label_3, action="rotate_start", isMoving=True)
-			# self.rotate_amnt(-pi/6)
-			# self.reportSender(roomba_label_3, action="rotate_done", isMoving=True)
+			# drive amount
+			self.reportSender(roomba_label_3, action="drive_start", isMoving=True)
+			self.drive_amnt(2.60)
+			self.reportSender(roomba_label_3, action="drive_done", isMoving=True)
 
-			# # drive amount
-			# self.reportSender(roomba_label_3, action="drive_start", isMoving=True)
-			# self.drive_amnt(1.75)
-			# self.reportSender(roomba_label_3, action="drive_done", isMoving=True)
+			# rotate amount
+			self.reportSender(roomba_label_3, action="rotate_start", isMoving=True)
+			self.rotate_amnt(-pi/6)
+			self.reportSender(roomba_label_3, action="rotate_done", isMoving=True)
 
-			# # rotate amount
-			# self.reportSender(roomba_label_3, action="rotate_start", isMoving=True)
-			# self.rotate_amnt(4*pi/6)
-			# self.reportSender(roomba_label_3, action="rotate_done", isMoving=True)
+			# drive amount
+			self.reportSender(roomba_label_3, action="drive_start", isMoving=True)
+			self.drive_amnt(1.75)
+			self.reportSender(roomba_label_3, action="drive_done", isMoving=True)
 
-			# # dock
-			# self.reportSender(roomba_label_3, action="dock_start", isMoving=True)
-			# self.dock()
-			# self.reportSender(roomba_label_3, action="dock_done", isMoving=False, isAtBase1=True)
+			# rotate amount
+			self.reportSender(roomba_label_3, action="rotate_start", isMoving=True)
+			self.rotate_amnt(4*pi/6)
+			self.reportSender(roomba_label_3, action="rotate_done", isMoving=True)
+
+			# dock
+			self.reportSender(roomba_label_3, action="dock_start", isMoving=True)
+			self.dock()
+			self.reportSender(roomba_label_3, action="dock_done", isMoving=False, isAtBase1=True)
 
 
 		except Exception as error:
@@ -805,6 +838,7 @@ def stop_all(exec,roomba,rclpy):
 	while not brokerSender.stop_all_message :
 				# print(brokerSender.start_all_message)
 				pass
+	
 	exec.shutdown()
 	roomba.destroy_node()
 	rclpy.try_shutdown()
@@ -814,7 +848,9 @@ if __name__ == '__main__':
 	# rclpy.init()
 
 	roomba = Roomba(namespace)
+	roomba_statuses = RoombaTopic()
 	exec = MultiThreadedExecutor(8)
+
 	exec.add_node(roomba)
 	exec.add_node(dock_sensor)
 	exec.add_node(ir_sensor)
@@ -822,9 +858,8 @@ if __name__ == '__main__':
 
 	exec.add_node(ready_status_publisher_node)
 	exec.add_node(readiness_tracker_node)
+	exec.add_node(roomba_statuses)
 
-	
-	exec.add_node(readiness_tracker_node)
 
 	time.sleep(0.1)
 	roomba.chirp(ready_notes)
