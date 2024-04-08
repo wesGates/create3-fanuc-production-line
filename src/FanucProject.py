@@ -27,6 +27,9 @@ from time import sleep
 from datetime import datetime
 import json
 
+import threading
+
+import brokerSender
 from brokerSender import mqttc
 
 #namespace = 'beaker'
@@ -218,7 +221,8 @@ class FanucActions(Node):
         
         self.cartMove(618.352, 1.623, -83.733, -179.284, -2.058, -59.679)               # Home
         
-        # Wait for start signal
+        while not brokerSender.start_all_message:                                      # Wait for start signal
+            pass
 
         label = "Picking up dice block at base 2"
 
@@ -266,7 +270,7 @@ class FanucActions(Node):
 
         label = "Moving to home position"
 
-        self.cartMove(618.352, 1.623, -83.733, -179.284, -2.058, -59.679)               # Home
+        self.cartMove(618.352, 1.623, -83.733, -179.284, -2.058, -59.679)                # Home
 
         '''request = Trigger.Request() # Make a request object
         while not self.gripService.wait_for_service(timeout_sec=1.0):
@@ -281,7 +285,8 @@ class FanucActions(Node):
 
         self.cartMove() # Home
 
-        # Wait for start signal
+        while not brokerSender.start_all_message:                                      # Wait for start signal
+            pass
 
         label = "Picking up dice block at conveyor 1"
 
@@ -379,6 +384,13 @@ class FanucActions(Node):
         #self.cartMove(791.903, 643.183, -53.923, 178.571, 0.950, 30.197)
 
 
+def stop_all(exec,robot,rclpy):
+    while not brokerSender.stop_all_message :
+        pass
+    exec.shutdown()
+    robot.destroy_node()
+    rclpy.try_shutdown()
+
 
 if __name__ == '__main__':
     #rclpy.init()
@@ -388,7 +400,16 @@ if __name__ == '__main__':
     mainBunsen = FanucActions('bunsen')
     listenerBunsen = FanucActions('bunsen')
 
-    exec = MultiThreadedExecutor(6) # Give it 2 threads for 2 nodes
+    exec = MultiThreadedExecutor(8)
+
+    broker_thread = threading.Thread(target=mqttc.loop_start)
+    broker_thread.start()
+ 
+    stop_threadBeaker = threading.Thread(target=stop_all,args=(exec,mainBeaker,rclpy))
+    stop_threadBeaker.start()
+    stop_threadBunsen = threading.Thread(target=stop_all,args=(exec,mainBunsen,rclpy))
+    stop_threadBunsen.start()
+
     # Add our nodes
     exec.add_node(mainBeaker)
     exec.add_node(listenerBeaker)
@@ -397,12 +418,10 @@ if __name__ == '__main__':
     mqttc.loop_start()
     
     # This allows us to start the function once the node is spinning
-    keycom = KeyCommander([
-		(KeyCode(char='s'), mainBunsen.test),
-		])
-    keycom = KeyCommander([
-		(KeyCode(char='r'), mainBeaker.test),
-		])
+    keycom = KeyCommander([(KeyCode(char='s'), mainBeaker.taskBeaker),])
+    keycom = KeyCommander([(KeyCode(char='d'), mainBunsen.taskBunsen),])
+    keycom = KeyCommander([(KeyCode(char='e'), mainBeaker.test),])
+    keycom = KeyCommander([(KeyCode(char='r'), mainBunsen.test),])
     print("Ready")
     exec.spin() # Start executing the nodes
     rclpy.shutdown()
