@@ -635,7 +635,7 @@ class Roomba(Node):
 	def takeoff(self):
 		try:
 		
-			
+			# Waits for start message from the broker before starting the circuit
 			while not brokerSender.start_all_message :
 				# print(brokerSender.start_all_message)
 				pass
@@ -643,20 +643,35 @@ class Roomba(Node):
 			print("Start all message received from the broker!")
 
 			# Define the process labels to be forwarded to the broker
-			roomba_label_1 = "Traveliang from base1 to base2."
+			roomba_label_1 = "Traveling from base1 to base2."
 			roomba_label_2 = "Traveling from base2 to base3."
 			roomba_label_3 = "Traveling from base3 to base1."
 			roomba_label_4 = "Finished cycle."
 
-			# self.drive_amnt(0.1)
+			##############################################################################################
+			""" Simulated circuit for testing out status checking """			
+			""" Run a simulated BeakerNode and BunsenNode for toggling ready statuses """			
+			##############################################################################################			
+
+			
+			self.drive_amnt(0.2)
+			self.check_base2()
+			self.check_dice_block_handoff_base2()
+			self.set_roomba_base2_false()
+
+			print("MOVING TO BASE3")
+			self.rotate_amnt(pi/2)
+			self.drive_amnt(0.2)
+			self.check_base3()
+			self.check_dice_block_handoff_base3()
+			self.set_roomba_base3_false()
+
+			print("MOVING TO BASE 1")
+			self.rotate_amnt(pi)
+			self.drive_amnt(0.2)
+			self.dock()
 
 
-			# self.check_base2()
-
-			# self.check_dice_block_handoff_base2()
-
-			self.drive_amnt(-0.1)
-   
 
 
 			# ### Actions for process 1: Navigating from base1 to base 2 ###
