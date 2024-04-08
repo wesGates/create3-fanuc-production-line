@@ -28,10 +28,10 @@ from time import sleep
 from datetime import datetime
 import json
 
-#import threading
+import threading
 
-#import brokerSender
-#from brokerSender import mqttc
+import brokerSender
+from brokerSender import mqttc
 
 #namespace = 'beaker'
 topic = "vandalrobot"
@@ -186,7 +186,7 @@ class FanucActions(Node):
             "date": str(datetime.now())
         }
     
-        #mqttc.publish(topic, json.dumps(data))
+        mqttc.publish(topic, json.dumps(data))
         
         
     def cartMove(self, x, y, z, w, p, r):
@@ -249,8 +249,8 @@ class FanucActions(Node):
         
         self.cartMove(618.352, 1.623, -83.733, -179.284, -2.058, -59.679)               # Home
         
-        #while not brokerSender.start_all_message:                                      # Wait for start signal
-        #    pass
+        while not brokerSender.start_all_message:                                      # Wait for start signal
+            pass
 
         label = "Picking up dice block at base 2"
 
@@ -258,7 +258,7 @@ class FanucActions(Node):
         #self.cartMove(-118.402, -561.427, -1012.155, -177.467, -2.058, -149.770)
         self.jointMove(-87.14, 89.965, -103.104, 3.492, 12.337, -69.112)                # Dock 2 approach
 
-        #self.nodeBeaker.check_roomba_base2()
+        self.nodeBeaker.check_roomba_base2()
 
         #self.jointMove(-88.794, 97.111, -108.691, 6.410, 20.199, -64.552)              # Pickup (old)
         self.jointMove(-87.365, 95.745, -103.319, 3.542, 13.117, -69.11)                # Pickup
@@ -290,11 +290,11 @@ class FanucActions(Node):
 
         label = "Moving conveyor 1"
 
-        #self.nodeBeaker.set_beaker_conv_false()
+        self.nodeBeaker.set_beaker_conv_false()
 
         self.convMoveBlock()
 
-        #self.nodeBeaker.set_beaker_conv_true()                                          # Ready at conveyor 1
+        self.nodeBeaker.set_beaker_conv_true()                                          # Ready at conveyor 1
 
         label = "Moving to home position"
 
@@ -314,14 +314,14 @@ class FanucActions(Node):
         self.cartMove(568.058, -75.22, 19.527, -179.637, 1.597, 29.106)                 # Home
         self.schunkMove('open')
 
-        #while not brokerSender.start_all_message:                                       # Wait for start signal
-        #    pass
+        while not brokerSender.start_all_message:                                       # Wait for start signal
+            pass
 
         label = "Picking up dice block at conveyor 1"
 
         self.cartMove(75.396, -831.926, -151.291, -178.373, -0.332, 26.7)               # Conveyor 1 approach end
         
-        #self.nodeBunsen.check_beaker_conv()                                             # Wait for ready at conveyor 1
+        self.nodeBunsen.check_beaker_conv()                                             # Wait for ready at conveyor 1
 
         self.cartMove(75.396, -831.926, -196.291, -178.373, -0.332, 26.7)               # Conveyor 1 pickup end
 
@@ -340,9 +340,9 @@ class FanucActions(Node):
 
         label = "Moving conveyor 2"
 
-        #self.nodeBunsen.set_bunsen_conv_false()                                         # Set bunsen conv false
+        self.nodeBunsen.set_bunsen_conv_false()                                         # Set bunsen conv false
         self.convMoveBlock()
-        #self.nodeBunsen.set_bunsen_conv_true()                                          # Set bunsen conv true
+        self.nodeBunsen.set_bunsen_conv_true()                                          # Set bunsen conv true
 
         label = "Picking up dice block at conveyor 2"
 
@@ -378,7 +378,7 @@ class FanucActions(Node):
         self.jointMove(57.792, 11.879, -30.824, -9.696, -38.583, -63.616)
         self.jointMove(109.054, 88.629, -98.042, -15.913, 7.339, -66.288)               # Dock 3 approach
 
-        #self.nodeBunsen.check_roomba_base3()                                            # Check create3 ready status
+        self.nodeBunsen.check_roomba_base3()                                            # Check create3 ready status
 
         self.jointMove(109.056, 95.089, -97.762, -15.906, 6.841, -65.237)               # Dock 3 drop
 
@@ -387,7 +387,7 @@ class FanucActions(Node):
 
         self.jointMove(109.054, 88.629, -98.042, -15.913, 7.339, -66.288)               # Dock 3 approach
 
-        #self.nodeBunsen.set_bunsen_false()                                              # Ready for create3 to leave dock 3
+        self.nodeBunsen.set_bunsen_false()                                              # Ready for create3 to leave dock 3
 
         #self.cartMove(363.496, 609.175, -83.366, 179.96, -6.23, 16.058)                 # Avoid table
         self.jointMove(57.792, 11.879, -30.824, -9.696, -38.583, -63.616)
@@ -399,7 +399,7 @@ class FanucActions(Node):
         self.convMove('forward')
         timeStart = time.time()
         while beltSensorRear == False:
-            if time.time()-timeStart > 10:
+            if time.time()- timeStart > 10:
                fault = "No dice block detected on conveyor"
                self.reportSender()
                break
@@ -439,20 +439,20 @@ if __name__ == '__main__':
 
     exec = MultiThreadedExecutor(8)
 
-    #broker_thread = threading.Thread(target=mqttc.loop_start)
-    #broker_thread.start()
+    broker_thread = threading.Thread(target=mqttc.loop_start)
+    broker_thread.start()
  
-    #stop_threadBeaker = threading.Thread(target=stop_all,args=(exec,mainBeaker,rclpy))
-    #stop_threadBeaker.start()
-    #stop_threadBunsen = threading.Thread(target=stop_all,args=(exec,mainBunsen,rclpy))
-    #stop_threadBunsen.start()
+    stop_threadBeaker = threading.Thread(target=stop_all,args=(exec,mainBeaker,rclpy))
+    stop_threadBeaker.start()
+    stop_threadBunsen = threading.Thread(target=stop_all,args=(exec,mainBunsen,rclpy))
+    stop_threadBunsen.start()
 
     # Add our nodes
     exec.add_node(mainBeaker)
     exec.add_node(listenerBeaker)
     exec.add_node(mainBunsen)
     exec.add_node(listenerBunsen)
-    #mqttc.loop_start()
+    mqttc.loop_start()
     
     # This allows us to start the function once the node is spinning
     keycom = KeyCommander([(KeyCode(char='s'), mainBeaker.taskBeaker),])
