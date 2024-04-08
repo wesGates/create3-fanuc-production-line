@@ -4,3 +4,7 @@
 /src/tutorial_interfaces/
 /src/py_pubsub/
 /src/ready_interfaces/
+dependencies/__pycache__/key_commander.cpython-310.pyc
+src/robot_status.txt
+src/__pycache__/ReadinessTrackerNode.cpython-310.pyc
+src/__pycache__/ReadyStatusPublisherNode.cpython-310.pyc
