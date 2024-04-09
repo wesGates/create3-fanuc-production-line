@@ -271,8 +271,8 @@ class FanucActions(Node):
         self.cartMove(302.556, -539.279, -83.733, -179.284, -2.058, -120.535)           # Avoid table
         self.cartMove(618.352, 1.623, -83.733, -179.284, -2.058, -59.679)               # Home
         
-        # while not brokerSender.start_all_message:                                      # Wait for start signal
-        #    pass
+        while not brokerSender.start_all_message:                                      # Wait for start signal
+           pass
 
         label = "Picking up dice block at base 2"
 
@@ -464,7 +464,7 @@ if __name__ == '__main__':
     mainBunsen = FanucActions('bunsen')
     listenerBunsen = FanucTopic('bunsen')
 
-    exec = MultiThreadedExecutor(8)
+    exec = MultiThreadedExecutor(10)
 
     broker_thread = threading.Thread(target=mqttc.loop_start)
     broker_thread.start()
@@ -479,7 +479,7 @@ if __name__ == '__main__':
     exec.add_node(listenerBeaker)
     exec.add_node(mainBunsen)
     exec.add_node(listenerBunsen)
-    mqttc.loop_start()
+    # mqttc.loop_start()???
     
     # This allows us to start the function once the node is spinning
     keycom = KeyCommander([(KeyCode(char='s'), mainBeaker.taskBeaker),])
