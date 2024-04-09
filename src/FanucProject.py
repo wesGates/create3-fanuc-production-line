@@ -190,9 +190,7 @@ class FanucActions(Node):
         
         
     def cartMove(self, x, y, z, w, p, r):
-        
         global action
-        
         action = "cartMove_start"
         self.reportSender()
 
@@ -210,9 +208,7 @@ class FanucActions(Node):
         self.reportSender()
         
     def jointMove(self, j1, j2, j3, j4, j5, j6):
-        
         global action
-
         action = "jointMove_start"
         self.reportSender()
 
@@ -272,9 +268,10 @@ class FanucActions(Node):
         global label, action, fault, withDice
         self.schunkMove('open')
         
+        self.cartMove(302.556, -539.279, -83.733, -179.284, -2.058, -120.535)           # Avoid table
         self.cartMove(618.352, 1.623, -83.733, -179.284, -2.058, -59.679)               # Home
         
-        #while not brokerSender.start_all_message:                                      # Wait for start signal
+        # while not brokerSender.start_all_message:                                      # Wait for start signal
         #    pass
 
         label = "Picking up dice block at base 2"
@@ -290,6 +287,10 @@ class FanucActions(Node):
         
         withDice = True
         self.schunkMove('close')
+
+        self.jointMove(-87.14, 89.965, -103.104, 3.492, 12.337, -69.112)                # Dock 2 approach
+
+        self.nodeBeaker.set_beaker_false()
 
         label = "Dice block flip"
 
@@ -336,11 +337,12 @@ class FanucActions(Node):
     def taskBunsen(self):
         global label, action, fault, withDice
 
+        self.jointMove(57.792, 11.879, -30.824, -9.696, -38.583, -63.616)
         self.cartMove(568.058, -75.22, 19.527, -179.637, 1.597, 29.106)                 # Home
         self.schunkMove('open')
 
-        #while not brokerSender.start_all_message:                                       # Wait for start signal
-        #    pass
+        while not brokerSender.start_all_message:                                       # Wait for start signal
+           pass
 
         label = "Picking up dice block at conveyor 1"
 
@@ -434,7 +436,7 @@ class FanucActions(Node):
         #self.convMove('forward')
         #self.schunkMove('open')
         #self.cartMove(618.352, 1.623, -83.733, -179.284, -2.058, -59.679)
-        #sleep(2)
+        sleep(2)
         #self.convMove('stop')
         #self.schunkMove('close')
 
@@ -443,7 +445,7 @@ class FanucActions(Node):
         #self.convMoveBlock()
         #self.nodeBeaker.check_roomba_base2()
         #self.cartMove(79.57, -577.628, -92.912, -179.983, 0.628, 26.238)
-        self.jointMove(-64.732, 20.007, -51.662, 3.396, -43.347, 90.833)
+        #self.jointMove(-64.732, 20.007, -51.662, 3.396, -43.347, 90.833)
 
 
 def stop_all(exec,robot,rclpy):
@@ -460,7 +462,7 @@ if __name__ == '__main__':
     mainBeaker = FanucActions('beaker')
     listenerBeaker = FanucTopic('beaker')
     mainBunsen = FanucActions('bunsen')
-    listenerBunsen = FanucActions('bunsen')
+    listenerBunsen = FanucTopic('bunsen')
 
     exec = MultiThreadedExecutor(8)
 

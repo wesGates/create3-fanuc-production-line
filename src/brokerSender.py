@@ -23,7 +23,7 @@ def on_message(client, userdata, msg):
             message = {
                 "messageType": "registration",
                 "node":"crx10", # e.g. "roomba", "crx10"
-                "nodeId":"bryancrx10_1", # Your nodeID goes here
+                "nodeId":"bryancrx10_2", # Your nodeID goes here
                 "productLine":"moscow", # e.g. moscow, cda
                 }
             mqttc.publish(topic, json.dumps(message))
