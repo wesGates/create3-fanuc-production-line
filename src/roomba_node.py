@@ -709,25 +709,39 @@ class Roomba(Node):
 			self.undock()
 			self.reportSender(roomba_label_1, action="undock_done", isAtBase1=False, isMoving=True)
 
+			############################
+			# # rotate amount
+			# self.reportSender(roomba_label_1, action="rotate_start", isMoving=True)
+			# self.rotate_amnt(-pi/2)
+			# self.reportSender(roomba_label_1, action="rotate_done", isMoving=True)
+
+			# # drive amount
+			# self.reportSender(roomba_label_1, action="drive_start", isMoving=True)
+			# self.drive_amnt(1.3)
+			# self.reportSender(roomba_label_1, action="drive_done", isMoving=True)
+
+			# # rotate amount
+			# self.reportSender(roomba_label_1, action="rotate_start", isMoving=True)
+			# self.rotate_amnt(pi/2)
+			# self.reportSender(roomba_label_1, action="rotate_done", isMoving=True)
+
+			# # drive amount
+			# self.reportSender(roomba_label_1, action="drive_start", isMoving=True)
+			# self.drive_amnt(2.0)
+			# self.reportSender(roomba_label_1, action="drive_done", isMoving=True)
+			############################
 			# rotate amount
 			self.reportSender(roomba_label_1, action="rotate_start", isMoving=True)
-			self.rotate_amnt(-pi/2)
+			self.rotate_amnt(-pi/5)
 			self.reportSender(roomba_label_1, action="rotate_done", isMoving=True)
 
 			# drive amount
 			self.reportSender(roomba_label_1, action="drive_start", isMoving=True)
-			self.drive_amnt(1.3)
+			self.drive_amnt(2.3)
 			self.reportSender(roomba_label_1, action="drive_done", isMoving=True)
-
-			# rotate amount
-			self.reportSender(roomba_label_1, action="rotate_start", isMoving=True)
-			self.rotate_amnt(pi/2)
-			self.reportSender(roomba_label_1, action="rotate_done", isMoving=True)
-
-			# drive amount
-			self.reportSender(roomba_label_1, action="drive_start", isMoving=True)
-			self.drive_amnt(2.0)
-			self.reportSender(roomba_label_1, action="drive_done", isMoving=True)
+   
+			############################
+   
 
 			# dock
 			self.reportSender(roomba_label_1, action="dock_start", isMoving=True)
@@ -775,17 +789,20 @@ class Roomba(Node):
 			self.drive_amnt(2.5)
 			self.reportSender(roomba_label_2, action="drive_done", isMoving=True)
 
+			# rotate amount (attempt to accelerate docking)
+			self.reportSender(roomba_label_2, action="rotate_start", isMoving=True)
+			self.rotate_amnt(pi/3)
+			self.reportSender(roomba_label_2, action="rotate_done", isMoving=True)
+
 			# dock
 			self.reportSender(roomba_label_2, action="dock_start", isMoving=True)
 			self.dock()
 			self.reportSender(roomba_label_2, action="dock_done", isMoving=False, isAtBase3=True)
 
 			## !!! Logic for communicating ready statuses goes here
-   
 			roomba_statuses.check_base3()
 			roomba_statuses.check_dice_block_handoff_base3()
 			roomba_statuses.set_roomba_base3_false()
-
 
 
 			### Actions for process 3: Navigating to base1 from base3 ###
@@ -826,7 +843,8 @@ class Roomba(Node):
 			# dock
 			self.reportSender(roomba_label_3, action="dock_start", isMoving=True)
 			self.dock()
-			self.reportSender(roomba_label_3, action="dock_done", isMoving=False, isAtBase1=True)
+			self.reportSender(roomba_label_4, action="dock_done", isMoving=False, isAtBase1=True)
+
 
 
 		except Exception as error:

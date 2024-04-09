@@ -22,7 +22,7 @@ from ReadinessTrackerNode import ReadinessTrackerNode
 
 
 # Initialize and connect to OTHER nodes
-rclpy.init()
+# rclpy.init()
 namespace = 'bunsen'
 ready_status_publisher_node = ReadyStatusPublisherNode()
 readiness_tracker_node = ReadinessTrackerNode()
