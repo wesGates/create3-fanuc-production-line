@@ -29,7 +29,6 @@ readiness_tracker_node = ReadinessTrackerNode()
 
 
 class BunsenNode(Node):
-	""" Initialization and other methods remain unchanged from RoombaNode"""
 
 
 	def __init__(self):
@@ -210,41 +209,41 @@ class BunsenNode(Node):
 
 
 
-# The following Key Commander is used for manually checking outputs in the terminal
-if __name__ == '__main__':
-	# rclpy.init()
+# # The following Key Commander is used for manually checking outputs in the terminal
+# if __name__ == '__main__':
+# 	# rclpy.init()
 
-	bunsen = BunsenNode()
-	exec = MultiThreadedExecutor(8)
+# 	bunsen = BunsenNode()
+# 	exec = MultiThreadedExecutor(8)
 
-	exec.add_node(bunsen)
-	exec.add_node(ready_status_publisher_node)
+# 	exec.add_node(bunsen)
+# 	exec.add_node(ready_status_publisher_node)
 
-	time.sleep(1.0)
+# 	time.sleep(1.0)
 	
-	keycom = KeyCommander([
-		(KeyCode(char='v'), bunsen.display_robot_statuses),
-		(KeyCode(char='i'), bunsen.set_bunsen_conv_true),
-		(KeyCode(char='j'), bunsen.set_bunsen_conv_false),
-		(KeyCode(char='o'), bunsen.set_bunsen_true),
-		(KeyCode(char='k'), bunsen.set_bunsen_false),
+# 	keycom = KeyCommander([
+# 		(KeyCode(char='v'), bunsen.display_robot_statuses),
+# 		(KeyCode(char='i'), bunsen.set_bunsen_conv_true),
+# 		(KeyCode(char='j'), bunsen.set_bunsen_conv_false),
+# 		(KeyCode(char='o'), bunsen.set_bunsen_true),
+# 		(KeyCode(char='k'), bunsen.set_bunsen_false),
 
-		(KeyCode(char='6'), bunsen.check_bunsen_conv),
-		(KeyCode(char='6'), bunsen.check_roomba_base3),
-	])
-	print(" Press 'v' to display all robot states in the text file")
-	print(" Press 'i' to set bunses_conv status as 'True'")
-	print(" Press 'j' to set bunses_conv status as 'False'")
-	print(" Press 'o' to set bunsen's status as 'True'")
-	print(" Press 'k' to set bunsen's status as 'False'")
+# 		(KeyCode(char='6'), bunsen.check_bunsen_conv),
+# 		(KeyCode(char='6'), bunsen.check_roomba_base3),
+# 	])
+# 	print(" Press 'v' to display all robot states in the text file")
+# 	print(" Press 'i' to set bunses_conv status as 'True'")
+# 	print(" Press 'j' to set bunses_conv status as 'False'")
+# 	print(" Press 'o' to set bunsen's status as 'True'")
+# 	print(" Press 'k' to set bunsen's status as 'False'")
 
-	try:
-		exec.spin()  # execute Roomba callbacks until shutdown or destroy is called
-	except KeyboardInterrupt:
-		print("KeyboardInterrupt, shutting down.")
-	except Exception as error:
-		print(f"Unexpected error: {error}")
-	finally:
-		exec.shutdown()
-		bunsen.destroy_node()
-		rclpy.try_shutdown()
+# 	try:
+# 		exec.spin()  # execute Roomba callbacks until shutdown or destroy is called
+# 	except KeyboardInterrupt:
+# 		print("KeyboardInterrupt, shutting down.")
+# 	except Exception as error:
+# 		print(f"Unexpected error: {error}")
+# 	finally:
+# 		exec.shutdown()
+# 		bunsen.destroy_node()
+# 		rclpy.try_shutdown()

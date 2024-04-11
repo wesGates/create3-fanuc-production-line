@@ -1,5 +1,0 @@
-# Request
-string robot1
----
-# Response
-bool ready

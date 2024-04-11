@@ -7,98 +7,87 @@ from rclpy.node import Node
 from pynput.keyboard import KeyCode
 import my_interfaces
 from my_interfaces.msg import ReadyStatus
+from my_interfaces.srv import UpdateStatus, CheckRobotStatus
 
 
 class ReadyStatusPublisherNode(Node):
-	""" Initialization and other methods remain unchanged from RoombaNode"""
-
-
 	def __init__(self):
 		super().__init__('ready_status_publisher')
 		self.ready_status_publisher_ = self.create_publisher(ReadyStatus, 'robot_ready_status', 10)
-		self.status_file_path = 'robot_status.txt'
+		self.robot_statuses = {
+			'roomba_base2': False,
+			'beaker': False,
+			'beaker_conv': False,
+			'bunsen_conv': False,
+			'bunsen': False,
+			'roomba_base3': False
+		}
+		self.timer = self.create_timer(1.0, self.publish_ready_status)
+		
+		# Activating 
+		self.update_status_srv = self.create_service(UpdateStatus, 'update_robot_status', self.update_status_callback)
 
-		# Initialize/reset the robot_status.txt file
-		with open(self.status_file_path, 'w') as file:
-			file.write('False,False,False,False,False,False\n')
+		self.check_status_srv = self.create_service(CheckRobotStatus, 'check_robot_status', self.check_status_callback)
+		
+		print("Publisher is online!")
 
+
+	def update_status_callback(self, request, response):
+		robot_name = request.robot_name
+		if robot_name in self.robot_statuses:
+			self.robot_statuses[robot_name] = request.status
+			response.success = True
+		else:
+			response.success = False
+		return response
+
+
+	def check_status_callback(self, request, response):
+		"""
+		Callback function for the CheckStatus service.
+		"""
+		self.get_logger().info(f"Received request to check {request.robot_name}'s status.")
+
+		# Wait for the status to become the expected status
+		while True:
+			# Assuming self.latest_ready_status is updated elsewhere in this node
+			current_status = getattr(self.latest_ready_status, request.robot_name, None)
+
+			if current_status is None:
+				self.get_logger().error(f"{request.robot_name} status is not found.")
+				response.status_matched = False
+				break
+
+			if current_status == request.expected_status:
+				response.status_matched = True
+				break
+
+			# Sleep for a short duration to avoid busy waiting
+			time.sleep(0.1)
+
+		return response
 
 	def publish_ready_status(self):
-		"""
-		Publish the status of robots by reading their statuses from the robot_status.txt file.
-		The order is roomba_base2, beaker, beaker_conv, bunsen_conv, bunsen, roomba_base3
-		"""
-		print("\n Publisher is publishing ready statuses...")
-
-		with open(self.status_file_path, 'r') as file:
-			statuses = file.read().strip().split(',')
-
-		# Creating the message to publish
 		msg = ReadyStatus()
-		msg.roomba_base2 = statuses[0] == 'True'
-		msg.beaker = statuses[1] == 'True'
-		msg.beaker_conv = statuses[2] == 'True'
-		msg.bunsen_conv = statuses[3] == 'True'
-		msg.bunsen = statuses[4] == 'True'
-		msg.roomba_base3 = statuses[5] == 'True'
-
-
-		# Publishing the message
+		msg.roomba_base2 = self.robot_statuses['roomba_base2']
+		msg.beaker = self.robot_statuses['beaker']
+		msg.beaker_conv = self.robot_statuses['beaker_conv']
+		msg.bunsen_conv = self.robot_statuses['bunsen_conv']
+		msg.bunsen = self.robot_statuses['bunsen']
+		msg.roomba_base3 = self.robot_statuses['roomba_base3']
 		self.ready_status_publisher_.publish(msg)
-		time.sleep(0.1)
-
-		# print(f"DEBUGGING: Published statuses - Roomba: {msg.roomba}, Beaker: {msg.beaker}, Bunsen: {msg.bunsen}")
-
-		
-	def display_robot_statuses(self):
-		"""
-		Display the current status of Roomba, Beaker, and Bunsen by reading the status file.
-		The order is roomba_base2, beaker, beaker_conv, bunsen_conv, bunsen, roomba_base3
-		"""
-
-		print("display current robot statuses:")
-		with open(self.status_file_path, 'r') as file:
-			statuses = file.read().strip().split(',')
-			print(	f"\n roomba_base2: {statuses[0]}, " + 
-		 			f"\n beaker: 	{statuses[1]}, " +
-					f"\n beaker_conv: 	{statuses[2]}, " +
-					f"\n bunsen_conv: 	{statuses[3]}, " +
-					f"\n bunsen: 	{statuses[4]}, " +
-					f"\n roomba_base3:  {statuses[5]}	")
 
 
-	def set_ready_status(self, 
-					  roomba_status_base2=None, 
-					  beaker_status=None, beaker_conv_status=None,
-					  bunsen_conv_status=None, bunsen_status=None,
-					  roomba_status_base3=None):
-		"""
-		Update the status of Roomba, Beaker, and Bunsen in the status file.
-		The order is in the direction that the dice block goese:
-		roomba, beaker, beaker_conv, bunsen_conv, bunsen
-		"""
-		with open(self.status_file_path, 'r') as file:
-			statuses = file.read().strip().split(',')
+# The following is used for spinning up the node for testing w/o using ros2 run
+def main(args=None):
+	rclpy.init(args=args)
+	ready_status_publisher_node = ReadyStatusPublisherNode()
 
-		# print("DEBUG: STATUS BEFORE WRITE")
-		# print(statuses)
+	rclpy.spin(ready_status_publisher_node)
 
-		# Update statuses based on the input parameters
-		if roomba_status_base2 is not None:
-			statuses[0] = str(roomba_status_base2)
-		if beaker_status is not None:
-			statuses[1] = str(beaker_status)
-		if beaker_conv_status is not None:
-			statuses[2] = str(beaker_conv_status)
-		if bunsen_conv_status is not None:
-			statuses[3] = str(bunsen_conv_status)
-		if bunsen_status is not None:
-			statuses[4] = str(bunsen_status)
-		if roomba_status_base3 is not None:
-			statuses[5] = str(roomba_status_base3)
+	# Shutdown the ROS client library for Python
+	ready_status_publisher_node.destroy_node()
+	rclpy.shutdown()
 
-		with open(self.status_file_path, 'w') as file:
-			file.write(','.join(statuses) + '\n')
-
-		# print("DEBUG: STATUS AFTER WRITE")
-		# print(statuses)
+if __name__ == '__main__':
+	main()

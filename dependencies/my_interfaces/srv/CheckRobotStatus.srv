@@ -1,0 +1,6 @@
+# Request
+string robot_name
+bool expected_status
+---
+# Response
+bool status_matched
