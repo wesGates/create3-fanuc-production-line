@@ -19,6 +19,8 @@ import fanuc_interfaces
 from fanuc_interfaces.action import CartPose, SchunkGripper, JointPose, Conveyor
 from fanuc_interfaces.msg import CurGripper, CurCartesian, CurJoints, ProxReadings, IsMoving
 
+from BeakerNode import BeakerNode
+from BunsenNode import BunsenNode
 
 import time
 from time import sleep
@@ -30,7 +32,6 @@ import threading
 
 import brokerSender
 from brokerSender import mqttc
-
 
 #namespace = 'beaker'
 topic = "vandalrobot"
@@ -50,11 +51,8 @@ convReady = True
 
 position = [[],[]]
 
-rclpy.init()
-from BeakerNode import BeakerNode
-from BunsenNode import BunsenNode
-
 fault = ""
+
 nodeBeaker = BeakerNode()
 nodeBunsen = BunsenNode()
 
@@ -104,7 +102,7 @@ class FanucTopic(Node):
     def moveListener(self, msg):
         global isMoving 
         isMoving = msg.moving
-        
+    	
     def service_callback(self, request, response):
         """
         This will run when we send a service request
@@ -123,7 +121,7 @@ class FanucActions(Node):
         if namespace == 'bunsen':
             self.nodeBunsen = nodeBunsen
 
-        # Actions, note their callback groups
+		# Actions, note their callback groups
         self.cart_ac = ActionClient(self, CartPose, f'/{namespace}/cartesian_pose')
         self.schunk_ac = ActionClient(self, SchunkGripper, f'/{namespace}/schunk_gripper') 
         self.joint_ac = ActionClient(self, JointPose, f'/{namespace}/joint_pose') 
@@ -192,9 +190,7 @@ class FanucActions(Node):
         
         
     def cartMove(self, x, y, z, w, p, r):
-        
         global action
-        
         action = "cartMove_start"
         self.reportSender()
 
@@ -212,9 +208,7 @@ class FanucActions(Node):
         self.reportSender()
         
     def jointMove(self, j1, j2, j3, j4, j5, j6):
-        
         global action
-
         action = "jointMove_start"
         self.reportSender()
 
@@ -249,7 +243,7 @@ class FanucActions(Node):
 
         action = "convMove_done"
         self.reportSender()
-        
+    	
     def schunkMove(self, type):
 
         global action
@@ -277,8 +271,8 @@ class FanucActions(Node):
         self.cartMove(302.556, -539.279, -83.733, -179.284, -2.058, -120.535)           # Avoid table
         self.cartMove(618.352, 1.623, -83.733, -179.284, -2.058, -59.679)               # Home
         
-        # while not brokerSender.start_all_message:                                      # Wait for start signal
-        #    pass
+        while not brokerSender.start_all_message:                                      # Wait for start signal
+           pass
 
         label = "Picking up dice block at base 2"
 
@@ -294,13 +288,14 @@ class FanucActions(Node):
         withDice = True
         self.schunkMove('close')
 
+        self.jointMove(-87.14, 89.965, -103.104, 3.492, 12.337, -69.112)                # Dock 2 approach
+
+        self.nodeBeaker.set_beaker_false()
+
         label = "Dice block flip"
 
         self.cartMove(302.556, -539.279, -83.733, -179.284, -2.058, -120.535)           # Avoid table
-        self.cartMove(302.556, -539.279, -83.733, -179.284, -2.058, -120.535)           # Avoid table
-
         self.cartMove(656.348, -144.366, -195.534, 127.834, -51.798, -31.558)           # Angled drop
-        self.nodeBeaker.set_beaker_false()
 
         self.schunkMove('open')
 
@@ -342,11 +337,12 @@ class FanucActions(Node):
     def taskBunsen(self):
         global label, action, fault, withDice
 
+        self.jointMove(57.792, 11.879, -30.824, -9.696, -38.583, -63.616)
         self.cartMove(568.058, -75.22, 19.527, -179.637, 1.597, 29.106)                 # Home
         self.schunkMove('open')
 
-        # while not brokerSender.start_all_message:                                       # Wait for start signal
-        #    pass
+        while not brokerSender.start_all_message:                                       # Wait for start signal
+           pass
 
         label = "Picking up dice block at conveyor 1"
 
@@ -429,20 +425,19 @@ class FanucActions(Node):
         global fault
         self.convMove('forward')
         timeStart = time.time()
-        while not beltSensorRear:
-            if time.time() - timeStart > 10:
-                fault = "No dice block detected on conveyor"
-                self.reportSender()
-                self.convMove('stop')
-                break
-
+        while beltSensorRear == False:
+            if time.time()- timeStart > 10:
+               fault = "No dice block detected on conveyor"
+               self.reportSender()
+               break
+        self.convMove('stop')
 
     def test(self):
         #self.convMove('forward')
         #self.schunkMove('open')
         #self.cartMove(618.352, 1.623, -83.733, -179.284, -2.058, -59.679)
-        #sleep(2)
-        self.convMove('stop')
+        sleep(2)
+        #self.convMove('stop')
         #self.schunkMove('close')
 
         #self.reportSender()
@@ -462,22 +457,20 @@ def stop_all(exec,robot,rclpy):
 
 
 if __name__ == '__main__':
-    # rclpy.init()
+    #rclpy.init()
     # Create our 2 nodes
     mainBeaker = FanucActions('beaker')
     listenerBeaker = FanucTopic('beaker')
-    
     mainBunsen = FanucActions('bunsen')
-    listenerBunsen = FanucActions('bunsen')
+    listenerBunsen = FanucTopic('bunsen')
 
-    exec = MultiThreadedExecutor(8)
+    exec = MultiThreadedExecutor(10)
 
     broker_thread = threading.Thread(target=mqttc.loop_start)
     broker_thread.start()
  
     stop_threadBeaker = threading.Thread(target=stop_all,args=(exec,mainBeaker,rclpy))
     stop_threadBeaker.start()
-    
     stop_threadBunsen = threading.Thread(target=stop_all,args=(exec,mainBunsen,rclpy))
     stop_threadBunsen.start()
 
@@ -486,31 +479,13 @@ if __name__ == '__main__':
     exec.add_node(listenerBeaker)
     exec.add_node(mainBunsen)
     exec.add_node(listenerBunsen)
-    mqttc.loop_start()
+    # mqttc.loop_start()???
     
     # This allows us to start the function once the node is spinning
     keycom = KeyCommander([(KeyCode(char='s'), mainBeaker.taskBeaker),])
     keycom = KeyCommander([(KeyCode(char='d'), mainBunsen.taskBunsen),])
-    # keycom = KeyCommander([(KeyCode(char='u'), mainBunsen.convMove),])
-    keycom = KeyCommander([(KeyCode(char='t'), mainBeaker.test),])
-    # keycom = KeyCommander([(KeyCode(char='r'), mainBunsen.test),])
-
-    print("Press 's' to start Beaker before sending the start signal. ")
-    print("Press 'd' to start Beaker before sending the start signal. ")
+    keycom = KeyCommander([(KeyCode(char='e'), mainBeaker.test),])
+    keycom = KeyCommander([(KeyCode(char='r'), mainBunsen.test),])
+    print("Ready")
     exec.spin() # Start executing the nodes
     rclpy.shutdown()
-
-    try:
-        exec.spin()  # execute Roomba callbacks until shutdown or destroy is called
-    except KeyboardInterrupt:
-        print("KeyboardInterrupt, shutting down.")
-        mainBeaker.destroy_node()
-        listenerBeaker.destroy_node()
-        mainBunsen.destroy_node()
-        listenerBunsen.destroy_node()
-        rclpy.shutdown()
-    except Exception as error:
-        print(f"Unexpected error: {error}")
-    finally:
-        exec.shutdown()
-        rclpy.try_shutdown()
