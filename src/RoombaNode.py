@@ -15,7 +15,7 @@ from key_commander import KeyCommander
 import my_interfaces
 from my_interfaces.msg import ReadyStatus
 from my_interfaces.srv import CheckReadiness
-from ReadyStatusPublisherNode import ReadyStatusPublisherNode
+from src.ReadyStatusServicesNode import ReadyStatusPublisherNode
 from ReadinessTrackerNode import ReadinessTrackerNode
 
 # Initialize and connect to OTHER nodes

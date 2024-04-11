@@ -23,6 +23,8 @@ class RobotClientNode(Node):
 		super().__init__(f'{robot_name}_client_node')
 		self.robot_name = robot_name
 
+
+
 		# Client for updating the status of a robot
 		self.update_status_client = self.create_client(UpdateStatus, 'update_robot_status')
 		while not self.update_status_client.wait_for_service(timeout_sec=1.0):
@@ -97,6 +99,7 @@ class RobotClientNode(Node):
 			time.sleep(1)  # Throttle the requests to avoid spamming
 
 
+
 #########  Example functions used during development #####
 	""" Functions for testing - setting statuses to true"""
 	def set_beaker_true(self):
@@ -138,6 +141,38 @@ class RobotClientNode(Node):
 ########################################################
 
 
+	def wait_test(self):
+		print("\nTEST 1: BEAKER TO TRUE\n")
+		tester_client_node.wait_for_specific_status('beaker', True)
+
+		print("\nTEST 2: BEAKER TO FALSE\n")
+		tester_client_node.wait_for_specific_status('beaker', False)
+
+		print("\nTEST 3: BEAKER_CONV TO TRUE\n")
+		tester_client_node.wait_for_specific_status('beaker_conv', True)
+
+		print("\nTEST 4: BEAKER_CONV TO FALSE\n")
+		tester_client_node.wait_for_specific_status('beaker_conv', False)
+
+		print("\nTEST 5: ROOMBA_BASE3 TO TRUE\n")
+		tester_client_node.wait_for_specific_status('roomba_base3', True)
+
+		print("\nTEST COMPLETE\n")
+
+
+
+""" Use the following to test the responsiveness of a node. 
+
+	Directions: 
+	1. Start the ReadyStatusServicesNode.py in a separate terminal
+	2. Start a single RobotClientNode with the wait_test enabled in keyComm
+	3. Start a single RObotClientNode copy with a different namespace
+	- Enable the set() commands, and use the keys to set statuses
+	4. Compare results with expected values.
+
+
+"""
+
 def main(args=None):
 	pass
 
@@ -145,8 +180,7 @@ def main(args=None):
 if __name__ == '__main__':
 	rclpy.init()
 
-	# ready_status_service_node = ReadyStatusPublisherNode()
-	tester_client_node = RobotClientNode('tester_1')
+	tester_client_node = RobotClientNode('tester_2')
 	exec = MultiThreadedExecutor(4)
 
 	exec.add_node(tester_client_node)
@@ -154,24 +188,19 @@ if __name__ == '__main__':
 
 
 	keycom = KeyCommander([
-		# (KeyCode(char='w'), tester_client_node.wait_test),
-		(KeyCode(char='t'), tester_client_node.set_roomba_base2_true),
-		(KeyCode(char='f'), tester_client_node.set_roomba_base2_false),
-
-		(KeyCode(char='y'), tester_client_node.set_beaker_true),
-		(KeyCode(char='g'), tester_client_node.set_beaker_false),
-		
-		(KeyCode(char='u'), tester_client_node.set_beaker_conv_true),
-		(KeyCode(char='h'), tester_client_node.set_beaker_conv_false),
-
-		(KeyCode(char='i'), tester_client_node.set_bunsen_conv_true),
-		(KeyCode(char='j'), tester_client_node.set_bunsen_conv_false),
-
-		(KeyCode(char='o'), tester_client_node.set_bunsen_true),
-		(KeyCode(char='k'), tester_client_node.set_bunsen_false),
-
-		(KeyCode(char='p'), tester_client_node.set_roomba_base3_true),
-		(KeyCode(char='l'), tester_client_node.set_roomba_base3_false),
+		(KeyCode(char='w'), tester_client_node.wait_test),
+		# (KeyCode(char='t'), tester_client_node.set_roomba_base2_true),
+		# (KeyCode(char='f'), tester_client_node.set_roomba_base2_false),
+		# (KeyCode(char='y'), tester_client_node.set_beaker_true),
+		# (KeyCode(char='g'), tester_client_node.set_beaker_false),
+		# (KeyCode(char='u'), tester_client_node.set_beaker_conv_true),
+		# (KeyCode(char='h'), tester_client_node.set_beaker_conv_false),
+		# (KeyCode(char='i'), tester_client_node.set_bunsen_conv_true),
+		# (KeyCode(char='j'), tester_client_node.set_bunsen_conv_false),
+		# (KeyCode(char='o'), tester_client_node.set_bunsen_true),
+		# (KeyCode(char='k'), tester_client_node.set_bunsen_false),
+		# (KeyCode(char='p'), tester_client_node.set_roomba_base3_true),
+		# (KeyCode(char='l'), tester_client_node.set_roomba_base3_false),
 	])
 
 	# Display the key command options to the user
