@@ -29,6 +29,7 @@ class ReadyStatusPublisherNode(Node):
 
 		self.check_status_srv = self.create_service(CheckRobotStatus, 'check_robot_status', self.check_status_callback)
 		
+		self.latest_ready_status = ReadyStatus()
 		print("Publisher is online!")
 
 
@@ -67,7 +68,9 @@ class ReadyStatusPublisherNode(Node):
 
 		return response
 
+
 	def publish_ready_status(self):
+		# Prepare the message
 		msg = ReadyStatus()
 		msg.roomba_base2 = self.robot_statuses['roomba_base2']
 		msg.beaker = self.robot_statuses['beaker']
@@ -75,6 +78,12 @@ class ReadyStatusPublisherNode(Node):
 		msg.bunsen_conv = self.robot_statuses['bunsen_conv']
 		msg.bunsen = self.robot_statuses['bunsen']
 		msg.roomba_base3 = self.robot_statuses['roomba_base3']
+
+		# Update the latest status before publishing
+		self.latest_ready_status = msg
+
+		# Publish the message
+		self.get_logger().info("Published: ", msg)
 		self.ready_status_publisher_.publish(msg)
 
 

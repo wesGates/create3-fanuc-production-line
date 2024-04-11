@@ -608,10 +608,8 @@ class Roomba(Node):
 		try:
 			self.roomba_status_client.update_robot_status('roomba_base2', True)
 
-		# Wait until Beaker's status is confirmed to be True
-			while not self.roomba_status_client.latest_ready_status.beaker:
-				self.get_logger().info("Waiting for Beaker's status to be True...")
-				rclpy.spin_once(self, timeout_sec=0.5)
+
+			self.roomba_status_client.wait_for_robot_status('beaker', True)
 
 			# # Wait for beaker to get the block
 			# roomba_statuses.check_dice_block_handoff_base2()
@@ -644,6 +642,7 @@ if __name__ == '__main__':
 
 	roomba = Roomba(namespace)
 	# roomba_statuses = RoombaTopic()
+	# roomba_publisher = ReadyStatusPublisherNode()
 	roomba_status_client = RobotClientNode(namespace)
 	exec = MultiThreadedExecutor(8)
 
@@ -672,7 +671,6 @@ if __name__ == '__main__':
 
 	])
 	print(" Press 'a' to intitiate launch")
-	print(" Press '`' to intitiate launch")
 
 	try:
 		exec.spin()  # execute Roomba callbacks until shutdown or destroy is called
