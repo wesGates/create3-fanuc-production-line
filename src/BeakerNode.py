@@ -29,7 +29,7 @@ from my_interfaces.msg import ReadyStatus  # Adjust the import path based on you
 
 
 # Initialize and connect to OTHER nodes
-rclpy.init()
+# rclpy.init()
 namespace = 'beaker'
 ready_status_publisher_node = ReadyStatusPublisherNode()
 readiness_tracker_node = ReadinessTrackerNode()

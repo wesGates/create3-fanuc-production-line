@@ -271,7 +271,7 @@ class RoombaTopic(Node):
 	def check_dice_block_handoff_base3(self):
 
 		print("Setting roomba_base3 status to True")
-		self.set_roomba_base3_true() # May be unneccessary since it should already be true
+		# self.set_roomba_base3_true() # May be unneccessary since it should already be true
 
 		# Check whether beaker has retrieved the dice block and moved away
 		print("Checking whether bunsen has the block before moving to base1")
@@ -661,6 +661,378 @@ class Roomba(Node):
 			# Waits for start message from the broker before starting the circuit
 			while not brokerSender.start_all_message :
 				# print(brokerSender.start_all_message)
+				print("Waiting for start_all message from the broker...")
+				time.sleep(1.0)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+				
 				pass
 
 			print("Start all message received from the broker!")
@@ -676,60 +1048,12 @@ class Roomba(Node):
 			""" Run a simulated BeakerNode and BunsenNode for toggling ready statuses """			
 			##############################################################################################			
 
-			# t = 1.0
-			
-			# self.drive_amnt(0.2)
-			# roomba_statuses.check_base2()
-			# # self.check_dice_block_handoff_base2()
-			# # self.set_roomba_base2_false()
-			# time.sleep(t)
-
-			# print("\n MOVING TO BASE3")
-			# self.rotate_amnt(pi/2)
-			# time.sleep(t)
-			# roomba_statuses.check_base3()
-			# roomba_statuses.check_dice_block_handoff_base3()
-			# roomba_statuses.set_roomba_base3_false()
-			# # time.sleep(t)
-
-			# print("\n MOVING TO BASE 1")
-			# self.rotate_amnt(pi)
-			# time.sleep(t)
-			# self.drive_amnt(0.2)
-			# time.sleep(t)
-			# self.dock()
-
-
-			# ##############################################################################################
-			##############################################################################################			
-
 			### Actions for process 1: Navigating from base1 to base 2 ###
 			# Undock and reset pose
 			self.reportSender(label=roomba_label_1, action="undock_start", isAtBase1=True, isMoving=False)
 			self.undock()
 			self.reportSender(roomba_label_1, action="undock_done", isAtBase1=False, isMoving=True)
 
-			############################
-			# # rotate amount
-			# self.reportSender(roomba_label_1, action="rotate_start", isMoving=True)
-			# self.rotate_amnt(-pi/2)
-			# self.reportSender(roomba_label_1, action="rotate_done", isMoving=True)
-
-			# # drive amount
-			# self.reportSender(roomba_label_1, action="drive_start", isMoving=True)
-			# self.drive_amnt(1.3)
-			# self.reportSender(roomba_label_1, action="drive_done", isMoving=True)
-
-			# # rotate amount
-			# self.reportSender(roomba_label_1, action="rotate_start", isMoving=True)
-			# self.rotate_amnt(pi/2)
-			# self.reportSender(roomba_label_1, action="rotate_done", isMoving=True)
-
-			# # drive amount
-			# self.reportSender(roomba_label_1, action="drive_start", isMoving=True)
-			# self.drive_amnt(2.0)
-			# self.reportSender(roomba_label_1, action="drive_done", isMoving=True)
-			############################
 			# rotate amount
 			self.reportSender(roomba_label_1, action="rotate_start", isMoving=True)
 			self.rotate_amnt(-pi/5)
@@ -740,6 +1064,10 @@ class Roomba(Node):
 			self.drive_amnt(2.3)
 			self.reportSender(roomba_label_1, action="drive_done", isMoving=True)
    
+			# rotate amount to face the dock
+			self.reportSender(roomba_label_1, action="rotate_start", isMoving=True)
+			self.rotate_amnt(pi/5)
+			self.reportSender(roomba_label_1, action="rotate_done", isMoving=True)
 			############################
    
 
@@ -900,59 +1228,13 @@ if __name__ == '__main__':
 		exec.spin()  # execute Roomba callbacks until shutdown or destroy is called
 	except KeyboardInterrupt:
 		print("KeyboardInterrupt, shutting down.")
+		roomba.destroy_node()
+		roomba_statuses.destroy_node()
+		rclpy.shutdown()
 	except Exception as error:
 		print(f"Unexpected error: {error}")
 	finally:
 		exec.shutdown()
-		roomba.destroy_node()
 		rclpy.try_shutdown()
 
-# # The following Key Commander is used for manually checking outputs in the terminal
-# if __name__ == '__main__':
-
-# 	roomba = RoombaNode()
-# 	exec = MultiThreadedExecutor(8)
-
-# 	exec.add_node(roomba)
-# 	exec.add_node(ready_status_publisher_node)
-# 	exec.add_node(readiness_tracker_node)
-
-
-# 	time.sleep(1.0)
-	
-# 	keycom = KeyCommander([
-# 		(KeyCode(char='u'), roomba.main), 
-# 		(KeyCode(char='v'), roomba.display_robot_statuses),
-# 		(KeyCode(char='r'), roomba.set_roomba_base2_true),
-# 		(KeyCode(char='d'), roomba.set_roomba_base2_false),
-# 		(KeyCode(char='t'), roomba.set_roomba_base3_true),
-# 		(KeyCode(char='f'), roomba.set_roomba_base3_false),
-
-# 		(KeyCode(char='`'), roomba.check_base2),
-# 		(KeyCode(char='1'), roomba.check_dice_block_handoff_base2),
-# 		(KeyCode(char='2'), roomba.check_base3),
-# 		(KeyCode(char='3'), roomba.check_dice_block_handoff_base3),
-
-
-# 	])
-# 	# print(" Press 'u' to intitiate main routine") # This will be the navigation code
-# 	print(" Press 'u' to intitiate main routine") # TESTING W/ PASSING VARS (KEY COMM ISSUES)
-# 	print(" Press 'v' to display all robot states in the text file")
-# 	print(" Press 'r' to set the roomba_base2's status as 'True'")
-# 	print(" Press 'd' to set the roomba_base2's status as 'False'")
-# 	print(" Press 't' to set the roomba_base3's status as 'True'")
-# 	print(" Press 'f' to set the roomba_base3's status as 'False'")
-# 	print(" Press 'c' to check the readiness of beaker")
-
-
-# 	try:
-# 		exec.spin()  # execute Roomba callbacks until shutdown or destroy is called
-# 	except KeyboardInterrupt:
-# 		print("KeyboardInterrupt, shutting down.")
-# 	except Exception as error:
-# 		print(f"Unexpected error: {error}")
-# 	finally:
-# 		exec.shutdown()
-# 		roomba.destroy_node()
-# 		rclpy.try_shutdown()
 
