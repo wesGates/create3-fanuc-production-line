@@ -142,6 +142,7 @@ class RobotClientNode(Node):
 
 
 	def wait_test(self):
+		""" This can be disabled since the other Example nodes will do the wait testing.  """
 		print("\nTEST 1: BEAKER TO TRUE\n")
 		tester_client_node.wait_for_specific_status('beaker', True)
 
