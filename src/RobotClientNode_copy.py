@@ -199,7 +199,7 @@ if __name__ == '__main__':
 		(KeyCode(char='i'), tester_client_node.set_bunsen_conv_true),
 		(KeyCode(char='j'), tester_client_node.set_bunsen_conv_false),
 		(KeyCode(char='o'), tester_client_node.set_bunsen_true),
-		(KeyCode(char='k'), tester_client_node.set_bunsen_false),y
+		(KeyCode(char='k'), tester_client_node.set_bunsen_false),
 		(KeyCode(char='p'), tester_client_node.set_roomba_base3_true),
 		(KeyCode(char='l'), tester_client_node.set_roomba_base3_false),
 	])

@@ -15,8 +15,6 @@ from my_interfaces.srv import UpdateStatus, CheckRobotStatus
 
 from ReadyStatusServicesNode import ReadyStatusServicesNode
 
-# rclpy.init()
-# ready_status_service_node = ReadyStatusPublisherNode()
 
 class RobotClientNode(Node):
 	def __init__(self, robot_name):

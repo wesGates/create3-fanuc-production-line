@@ -597,15 +597,39 @@ class Roomba(Node):
 
 	def test(self):
 		try:
+			# Step 1: Set the status of roomba_base2 to True and wait for it to be confirmed
+			self.get_logger().info("Setting roomba_base2 status to True...")
 			self.roomba_status_client.update_robot_status('roomba_base2', True)
+			self.roomba_status_client.wait_for_specific_status('roomba_base2', True)
+			self.get_logger().info("roomba_base2 status set to True confirmed.")
 
+			# Step 2: Wait for beaker to become False
+			self.get_logger().info("Waiting for beaker status to become False...")
+			self.roomba_status_client.wait_for_specific_status('beaker', False)
+			self.get_logger().info("beaker status is now False.")
 
-			self.roomba_status_client.wait_for_specific_status('beaker', True)
+			# Step 3: Set roomba_base2 status to False
+			self.get_logger().info("Setting roomba_base2 status to False...")
+			self.roomba_status_client.update_robot_status('roomba_base2', False)
+			self.roomba_status_client.wait_for_specific_status('roomba_base2', False)
+			self.get_logger().info("roomba_base2 status set to False confirmed.")
 
+			# Step 4: Set roomba_base3 status to True and wait for it to be confirmed
+			self.get_logger().info("Setting roomba_base3 status to True...")
+			self.roomba_status_client.update_robot_status('roomba_base3', True)
+			self.roomba_status_client.wait_for_specific_status('roomba_base3', True)
+			self.get_logger().info("roomba_base3 status set to True confirmed.")
 
+			# Step 5: Wait for bunsen to become True
+			self.get_logger().info("Waiting for bunsen status to become True...")
+			self.roomba_status_client.wait_for_specific_status('bunsen', True)
+			self.get_logger().info("bunsen status is now True.")
+
+			# Step 6: Print statement indicating the transition
+			self.get_logger().info("Traveling from base 3 to base 1.")
 
 		except Exception as error:
-			roomba.chirp(error_notes)
+			roomba.chirp(error_notes)  # Assuming `chirp` is a method to indicate errors audibly
 			self.get_logger().error(f"Error in test: {error}")
 
 
