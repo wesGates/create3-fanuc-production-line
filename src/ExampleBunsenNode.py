@@ -136,7 +136,7 @@ def stop_all(exec,roomba,rclpy):
 if __name__ == '__main__':
 	# rclpy.init()
 
-	beaker = BunsenNode(namespace)
+	bunsen = BunsenNode(namespace)
 
 	exec = MultiThreadedExecutor(3) # No. Nodes + 1
 

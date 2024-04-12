@@ -4,7 +4,11 @@ sys.path.append("../dependencies/")
 
 import rclpy
 from rclpy.node import Node
+from rclpy.executors import MultiThreadedExecutor
+
 from pynput.keyboard import KeyCode
+from key_commander import KeyCommander
+
 import my_interfaces
 from my_interfaces.msg import ReadyStatus
 from my_interfaces.srv import UpdateStatus, CheckRobotStatus
@@ -66,23 +70,45 @@ class ReadyStatusServicesNode(Node):
 		return response
 
 
+	def display_statuses(self):
+		s = self.latest_ready_status
+
+		self.get_logger().info(f"Currently stored robot statuses: \n")
+		print(s.roomba_base2, s.beaker, s.beaker_conv, s.bunsen_conv, s.bunsen, s.roomba_base3)
+
 
 
 """ Use this to spin up the node separately from the other nodes in a separate terminal"""
 
 def main(args=None):
-    rclpy.init(args=args)
-    ready_status_services_node = ReadyStatusServicesNode()
 
-    try:
-        # Spin the node to continuously call the callbacks
-        rclpy.spin(ready_status_services_node)
-    except KeyboardInterrupt:
-        ready_status_services_node.get_logger().info('Node was interrupted and is shutting down.')
-    finally:
-        # Clean up the node resources
-        ready_status_services_node.destroy_node()
-        rclpy.shutdown()
+	pass
 
 if __name__ == '__main__':
-    main()
+	rclpy.init()
+	exec = MultiThreadedExecutor(2) # No. Nodes + 1
+	ready_status_services_node = ReadyStatusServicesNode()
+
+	exec.add_node(ready_status_services_node)
+
+	keycom = KeyCommander([
+		(KeyCode(char='c'), ready_status_services_node.display_statuses),
+
+	])
+	print(" Press 'c' to display the currently stored robot statuses within the publisher")
+
+
+	try:
+		exec.spin()  # execute ready_status_services_node callbacks until shutdown or destroy is called
+	except KeyboardInterrupt:
+		print("KeyboardInterrupt, shutting down.")
+		ready_status_services_node.destroy_node()
+		rclpy.shutdown()
+	except Exception as error:
+		print(f"Unexpected error: {error}")
+	finally:
+		exec.shutdown()
+		rclpy.try_shutdown()
+
+
+	# main()
