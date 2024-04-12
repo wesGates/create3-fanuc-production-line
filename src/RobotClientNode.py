@@ -170,7 +170,7 @@ if __name__ == '__main__':
 	rclpy.init()
 
 	# ready_status_service_node = ReadyStatusPublisherNode()
-	tester_client_node = RobotClientNode('tester_1')
+	tester_client_node = RobotClientNode('tester')
 	exec = MultiThreadedExecutor(4)
 
 	exec.add_node(tester_client_node)
