@@ -165,10 +165,10 @@ if __name__ == '__main__':
 
 
 	keycom = KeyCommander([
-		(KeyCode(char='b'), roomba.test),
+		(KeyCode(char='v'), roomba.roomba_test),
 
 	])
-	print(" Press 'b' to intitiate roomba test")
+	print(" Press 'v' to intitiate roomba test")
 
 
 	try:
