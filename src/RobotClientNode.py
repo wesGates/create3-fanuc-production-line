@@ -199,7 +199,7 @@ if __name__ == '__main__':
 	])
 
 	# Display the key command options to the user
-	print("Press buttons to do stuff")
+	print("Tester and key commands are enabled. Press buttons to do stuff. ")
 
 
 	try:
