@@ -64,24 +64,30 @@ class ReadyStatusServicesNode(Node):
 			response.status_matched = False
 		else:
 			response.status_matched = (current_status == request.expected_status)
-			self.get_logger().info(f"{request.robot_name} status check: {response.status_matched}")
+			self.get_logger().info(f"{request.robot_name} status matched check: {response.status_matched}")
 
-		print("Check_status_callback response: ", response)
+		# print("Check_status_callback response: ", response)
 		return response
 
 
 	def display_statuses(self):
 		s = self.latest_ready_status
-
 		self.get_logger().info(f"Currently stored robot statuses: \n")
 		print(s.roomba_base2, s.beaker, s.beaker_conv, s.bunsen_conv, s.bunsen, s.roomba_base3)
+
+
+	def reset_statuses(self):
+		# Iterate over each robot status key and reset to False
+		for key in self.robot_statuses.keys():
+			setattr(self.latest_ready_status, key, False)
+		self.get_logger().info("All robot statuses have been reset to False.")
+
 
 
 
 """ Use this to spin up the node separately from the other nodes in a separate terminal"""
 
 def main(args=None):
-
 	pass
 
 if __name__ == '__main__':
@@ -93,6 +99,7 @@ if __name__ == '__main__':
 
 	keycom = KeyCommander([
 		(KeyCode(char='c'), ready_status_services_node.display_statuses),
+		(KeyCode(char='r'), ready_status_services_node.reset_statuses),
 
 	])
 	print(" Press 'c' to display the currently stored robot statuses within the publisher")

@@ -1,3 +1,12 @@
+# Python Packages
+import sys
+import time
+from math import pi
+from collections import deque
+import json
+from datetime import datetime
+sys.path.append("../dependencies/")
+
 # ROS Imports
 import rclpy
 from rclpy.node import Node
@@ -9,23 +18,14 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from pynput.keyboard import KeyCode
 from key_commander import KeyCommander
 
-# Python Packages
-import sys
-sys.path.append("../dependencies/")
-import time
-from math import pi
-from collections import deque
-import json
-from datetime import datetime
-
 # Threading
 from rclpy.executors import MultiThreadedExecutor
 from threading import RLock
 import threading
 
-# Broker
-import brokerSender
-from brokerSender import mqttc
+# # Broker: NOTE: Enable this for implementation
+# import brokerSender
+# from brokerSender import mqttc
 
 # Node Imports
 from RobotClientNode import RobotClientNode
@@ -43,6 +43,8 @@ roomba_status_client = RobotClientNode(namespace)
 class RoombaNode(Node):
 	def __init__(self, namespace):
 		super().__init__('roomba_node')
+
+		"""" This is everything that needs to be put into your chosen node"""
 
 		self.roomba_status_client = roomba_status_client
 
@@ -97,34 +99,51 @@ class RoombaNode(Node):
 		" Uses an instance of the RobotClientNode to change statuses and wait for other statuses"
 		try:
 			
-			# Step 0: Wait for beaker to become True, indicating it's in position for the dice pickup
-			self.get_logger().info("Waiting for beaker status to become True")
-			self.roomba_status_client.update_robot_status('beaker', True)
+			# Move to base2 at beaker
 
-			# Step 1: Set the status of roomba_base2 to True
+			# Step 1-1: Set the status of roomba_base2 to True after docking
 			self.get_logger().info("Setting roomba_base2 status to True...")
 			self.roomba_status_client.update_robot_status('roomba_base2', True)
 
-			# Step 2: Wait for beaker to become False
+			# Step 1-2: Wait for beaker to become True, indicating it's in position for the dice pickup
+			self.get_logger().info("Waiting for beaker status to become True")
+			self.roomba_status_client.update_robot_status('beaker', True)
+
+			# Step 1-3: Wait for beaker to become False, indicating beaker has the dice block and has moved away
 			self.get_logger().info("Waiting for beaker status to become False...")
 			self.roomba_status_client.wait_for_specific_status('beaker', False)
 			self.get_logger().info("beaker status is now False.")
 
-			# Step 3: Set roomba_base2 status to False
+			# Step 1-4: Set roomba_base2 status to False
 			self.get_logger().info("Setting roomba_base2 status to False...")
 			self.roomba_status_client.update_robot_status('roomba_base2', False)
-
-			# Step 4: Set roomba_base3 status to True
-			self.get_logger().info("Setting roomba_base3 status to True...")
-			self.roomba_status_client.update_robot_status('roomba_base3', True)
 		
-			# Step 5: Wait for bunsen to become True
+			# Move to base3 at bunsen
+
+			# Step 2-1: After docking, wait for bunsen to become True before setting roomba_base3 to true
 			self.get_logger().info("Waiting for bunsen status to become True...")
 			self.roomba_status_client.wait_for_specific_status('bunsen', True)
 			self.get_logger().info("bunsen status is now True.")
 
-			# Step 6: Print statement indicating the transition
-			self.get_logger().info("Traveling from base 3 to base 1.")
+			# Step 2-2: Tell bunsen that the dice block can be delivered
+			self.get_logger().info("Setting roomba_base3 status to True...")
+			self.roomba_status_client.update_robot_status('roomba_base3', True)
+
+			# Step 2-3: Wait for bunsen to indicate that the dice block was delivered, and has moved away
+			self.get_logger().info("Waiting for bunsen status to become False...")
+			self.roomba_status_client.wait_for_specific_status('bunsen', False)
+			self.get_logger().info("bunsen status is now False.")
+
+			# Step 2-4: Reset roomba_base3 to False
+			self.get_logger().info("Setting roomba_base3 status to False...")
+			self.roomba_status_client.update_robot_status('roomba_base3', False)
+
+			# Undock and travel
+
+			# Step 3: Print statement indicating the transition
+			self.get_logger().info("Success! Traveling from base 3 to base 1.")
+			print("\nYou may run the test function again on specific button press ")
+
 
 		except Exception as error:
 			self.get_logger().error(f"Error in test: {error}")

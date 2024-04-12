@@ -1,3 +1,12 @@
+# Python Packages
+import sys
+import time
+from math import pi
+from collections import deque
+import json
+from datetime import datetime
+sys.path.append("../dependencies/")
+
 # ROS Imports
 import rclpy
 from rclpy.node import Node
@@ -9,23 +18,14 @@ from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
 from pynput.keyboard import KeyCode
 from key_commander import KeyCommander
 
-# Python Packages
-import sys
-sys.path.append("../dependencies/")
-import time
-from math import pi
-from collections import deque
-import json
-from datetime import datetime
-
 # Threading
 from rclpy.executors import MultiThreadedExecutor
 from threading import RLock
 import threading
 
-# Broker
-import brokerSender
-from brokerSender import mqttc
+# # Broker: NOTE: Enable this for implementation
+# import brokerSender
+# from brokerSender import mqttcb
 
 # Node Imports
 from RobotClientNode import RobotClientNode
@@ -43,6 +43,8 @@ beaker_status_client = RobotClientNode(namespace)
 class BeakerNode(Node):
 	def __init__(self, namespace):
 		super().__init__('beaker_node')
+
+		"""" This is everything that needs to be put into your chosen node"""
 
 		self.beaker_status_client = beaker_status_client
 
@@ -95,31 +97,53 @@ class BeakerNode(Node):
 
 	def beaker_test(self):
 		try:
-			# Step 1: Set Beaker's status to True
+			# Step 1: Set Beaker's status to True to indicate it is ready for dice block pickup
 			self.get_logger().info("Setting Beaker's status to True...")
 			self.beaker_status_client.update_robot_status('beaker', True)
 
-			# Step 2: Wait for roomba_base2 to become True
+			# Step 2: Wait for roomba_base2 to become True before dice block pickup
 			self.get_logger().info("Waiting for roomba_base2 status to become True...")
 			self.beaker_status_client.wait_for_specific_status('roomba_base2', True)
-			self.get_logger().info("roomba_base2 status is now True.")
 
-			# Step 3: Set Beaker's status to False
+			# Step 3: Set Beaker's status to False to tell the roomba that it can move away
 			self.get_logger().info("Setting Beaker's status to False...")
 			self.beaker_status_client.update_robot_status('beaker', False)
 
-			# Step 4: Set BeakerConv's status to True
-			self.get_logger().info("Setting BeakerConv's status to True...")
+
+			# Step 4-1: Check for bunsen_conv True before placing the dice block
+			self.get_logger().info("Waiting for bunsen_conv status to become True...")
+			self.beaker_status_client.wait_for_specific_status('bunsen_conv', True)
+
+			# Step 4-2: Place dice block
+			# Step 4-3: Check if dice block is seen by the first conveyor sensor (maybe move away first)
+			# -- If dice block is absent, throw fault
+			# -- Otherwise, start conveyor
+			# Step 4-4: Wait until dice block is in position or until timeout, then...
+
+			# Step 4-5: Indicate to bunsen that the diceblock is detected by the second conveyor sensor
+			self.get_logger().info("Setting beaker_conv's status to True...")
 			self.beaker_status_client.update_robot_status('beaker_conv', True)
 
-			# Step 5: Set BeakerConv's status to False
-			self.get_logger().info("Setting BeakerConv's status to False...")
+			# Step 4-6: Wait for bunsen_conveyor goes false to ensure the diceblock pickup was successful
+			self.get_logger().info("Waiting for bunsen_conv status to become False...")
+			self.beaker_status_client.wait_for_specific_status('bunsen_conv', False)
+
+			# Step 4-7: Reset beaker_conveyor's status to False
+			self.get_logger().info("Setting beaker_conv's status to False...")
 			self.beaker_status_client.update_robot_status('beaker_conv', False)
 
 
+			# Step 5: Set BeakerConv's status to False, assuming all went well with bunsen
+			self.get_logger().info("Setting BeakerConv's status to False...")
+			self.beaker_status_client.update_robot_status('beaker_conv', False)
+
+			# Step 6:
+			self.get_logger().info("Success! Moving Beaker back to home position.")
+			print("\nYou may run the test function again on specific button press ")
+
 		except Exception as error:
 			# Assuming there's a way to signal error audibly or visually for Beaker
-			self.get_logger().error(f"Error in BeakerTest: {error}")
+			self.get_logger().error(f"Error in beaker_test: {error}")
 
 
 
@@ -161,6 +185,7 @@ if __name__ == '__main__':
 		(KeyCode(char='b'), beaker.beaker_test),
 
 	])
+	
 	print(" Press 'b' to intitiate beaker test")
 
 

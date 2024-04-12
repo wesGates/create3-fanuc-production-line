@@ -44,9 +44,7 @@ class RobotClientNode(Node):
 		Update the latest ready statuses with the message received from the 'robot_ready_status' topic
 		"""
 		self.latest_ready_status = msg
-		print(f"{self.robot_name} Updated status: {msg.roomba_base2, msg.beaker, msg.beaker_conv, msg.bunsen_conv, msg.bunsen, msg.roomba_base3}")
-
-
+		# print(f"{self.robot_name} Updated status: {msg.roomba_base2, msg.beaker, msg.beaker_conv, msg.bunsen_conv, msg.bunsen, msg.roomba_base3}")
 
 
 	def update_robot_status(self, robot_name, status):
@@ -96,11 +94,11 @@ class RobotClientNode(Node):
 
 
 
-	###################################################################################
+	######################################################
 	""" TESTING STUFF """
-	###################################################################################
+	######################################################
 
-#####  Example functions used during development #####
+	#####  Example functions used during development #####
 	""" Functions for testing - setting statuses to true"""
 	def set_beaker_true(self):
 		self.update_robot_status('beaker', True)
@@ -138,29 +136,9 @@ class RobotClientNode(Node):
 
 	def set_roomba_base3_false(self):
 		self.update_robot_status('roomba_base3', False)
-########################################################
 
+	########################################################
 
-	def wait_test(self):
-		""" This can be disabled since the other Example nodes will do the wait testing.  """
-		print("\nTEST 1: BEAKER TO TRUE\n")
-		tester_client_node.wait_for_specific_status('beaker', True)
-
-		print("\nTEST 2: BEAKER TO FALSE\n")
-		tester_client_node.wait_for_specific_status('beaker', False)
-
-		print("\nTEST 3: BEAKER_CONV TO TRUE\n")
-		tester_client_node.wait_for_specific_status('beaker_conv', True)
-
-		print("\nTEST 4: BEAKER_CONV TO FALSE\n")
-		tester_client_node.wait_for_specific_status('beaker_conv', False)
-
-		print("\nTEST 5: ROOMBA_BASE3 TO TRUE\n")
-		tester_client_node.wait_for_specific_status('roomba_base3', True)
-
-		print("\nTEST COMPLETE\n")
-
-########################################################
 
 def main(args=None):
 	pass
@@ -178,7 +156,6 @@ if __name__ == '__main__':
 
 
 	keycom = KeyCommander([
-		# (KeyCode(char='w'), tester_client_node.wait_test),
 		(KeyCode(char='t'), tester_client_node.set_roomba_base2_true),
 		(KeyCode(char='f'), tester_client_node.set_roomba_base2_false),
 
@@ -199,7 +176,25 @@ if __name__ == '__main__':
 	])
 
 	# Display the key command options to the user
-	print("Tester and key commands are enabled. Press buttons to do stuff. ")
+	print("Tester and key commands are enabled. Press the keys to toggle robot statuses. ")
+	
+	print("Press 't' to set roomba_base2 to True.")
+	print("Press 'f' to set roomba_base2 to False.")
+
+	print("Press 'y' to set beaker to True.")
+	print("Press 'g' to set beaker to False.")
+
+	print("Press 'u' to set beaker_conv to True.")
+	print("Press 'h' to set beaker_conv to False.")
+
+	print("Press 'i' to set bunsen_conv to True.")
+	print("Press 'j' to set bunsen_conv to False.")
+
+	print("Press 'o' to set bunsen to True.")
+	print("Press 'k' to set bunsen to False.")
+
+	print("Press 'p' to set roomba_base3 to True.")
+	print("Press 'l' to set roomba_base3 to False.")
 
 
 	try:
