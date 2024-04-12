@@ -159,6 +159,7 @@ class RobotClientNode(Node):
 
 		print("\nTEST COMPLETE\n")
 
+########################################################
 
 
 """ Use the following to test the responsiveness of a node. 
@@ -188,19 +189,19 @@ if __name__ == '__main__':
 
 
 	keycom = KeyCommander([
-		(KeyCode(char='w'), tester_client_node.wait_test),
-		# (KeyCode(char='t'), tester_client_node.set_roomba_base2_true),
-		# (KeyCode(char='f'), tester_client_node.set_roomba_base2_false),
-		# (KeyCode(char='y'), tester_client_node.set_beaker_true),
-		# (KeyCode(char='g'), tester_client_node.set_beaker_false),
-		# (KeyCode(char='u'), tester_client_node.set_beaker_conv_true),
-		# (KeyCode(char='h'), tester_client_node.set_beaker_conv_false),
-		# (KeyCode(char='i'), tester_client_node.set_bunsen_conv_true),
-		# (KeyCode(char='j'), tester_client_node.set_bunsen_conv_false),
-		# (KeyCode(char='o'), tester_client_node.set_bunsen_true),
-		# (KeyCode(char='k'), tester_client_node.set_bunsen_false),
-		# (KeyCode(char='p'), tester_client_node.set_roomba_base3_true),
-		# (KeyCode(char='l'), tester_client_node.set_roomba_base3_false),
+		(KeyCode(char='='), tester_client_node.wait_test),
+		(KeyCode(char='t'), tester_client_node.set_roomba_base2_true),
+		(KeyCode(char='f'), tester_client_node.set_roomba_base2_false),
+		(KeyCode(char='y'), tester_client_node.set_beaker_true),
+		(KeyCode(char='g'), tester_client_node.set_beaker_false),
+		(KeyCode(char='u'), tester_client_node.set_beaker_conv_true),
+		(KeyCode(char='h'), tester_client_node.set_beaker_conv_false),
+		(KeyCode(char='i'), tester_client_node.set_bunsen_conv_true),
+		(KeyCode(char='j'), tester_client_node.set_bunsen_conv_false),
+		(KeyCode(char='o'), tester_client_node.set_bunsen_true),
+		(KeyCode(char='k'), tester_client_node.set_bunsen_false),y
+		(KeyCode(char='p'), tester_client_node.set_roomba_base3_true),
+		(KeyCode(char='l'), tester_client_node.set_roomba_base3_false),
 	])
 
 	# Display the key command options to the user

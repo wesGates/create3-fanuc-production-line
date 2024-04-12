@@ -97,94 +97,119 @@ class RobotClientNode(Node):
 			time.sleep(1)  # Throttle the requests to avoid spamming
 
 
-#########  Example functions used during development #####
-	""" Functions for testing - setting statuses to true"""
-	def set_beaker_true(self):
-		self.update_robot_status('beaker', True)
+# 	###################################################################################
+# 	""" TESTING STUFF """
+# 	###################################################################################
+
+# #####  Example functions used during development #####
+# 	""" Functions for testing - setting statuses to true"""
+# 	def set_beaker_true(self):
+# 		self.update_robot_status('beaker', True)
 	
-	def set_beaker_conv_true(self):
-		self.update_robot_status('beaker_conv', True)
+# 	def set_beaker_conv_true(self):
+# 		self.update_robot_status('beaker_conv', True)
 
-	def set_bunsen_conv_true(self):
-		self.update_robot_status('bunsen_conv', True)
+# 	def set_bunsen_conv_true(self):
+# 		self.update_robot_status('bunsen_conv', True)
 
-	def set_bunsen_true(self):
-		self.update_robot_status('bunsen', True)
+# 	def set_bunsen_true(self):
+# 		self.update_robot_status('bunsen', True)
 
-	def set_roomba_base2_true(self):
-		self.update_robot_status('roomba_base2', True)
+# 	def set_roomba_base2_true(self):
+# 		self.update_robot_status('roomba_base2', True)
 
-	def set_roomba_base3_true(self):
-		self.update_robot_status('roomba_base3', True)
+# 	def set_roomba_base3_true(self):
+# 		self.update_robot_status('roomba_base3', True)
 
-	""" Functions for testing - setting statuses to False """
-	def set_beaker_false(self):
-		self.update_robot_status('beaker', False)
+# 	""" Functions for testing - setting statuses to False """
+# 	def set_beaker_false(self):
+# 		self.update_robot_status('beaker', False)
 	
-	def set_beaker_conv_false(self):
-		self.update_robot_status('beaker_conv', False)
+# 	def set_beaker_conv_false(self):
+# 		self.update_robot_status('beaker_conv', False)
 
-	def set_bunsen_conv_false(self):
-		self.update_robot_status('bunsen_conv', False)
+# 	def set_bunsen_conv_false(self):
+# 		self.update_robot_status('bunsen_conv', False)
 
-	def set_bunsen_false(self):
-		self.update_robot_status('bunsen', False)
+# 	def set_bunsen_false(self):
+# 		self.update_robot_status('bunsen', False)
 
-	def set_roomba_base2_false(self):
-		self.update_robot_status('roomba_base2', False)
+# 	def set_roomba_base2_false(self):
+# 		self.update_robot_status('roomba_base2', False)
 
-	def set_roomba_base3_false(self):
-		self.update_robot_status('roomba_base3', False)
-########################################################
-
-
-def main(args=None):
-	pass
+# 	def set_roomba_base3_false(self):
+# 		self.update_robot_status('roomba_base3', False)
+# ########################################################
+# ########################################################
 
 
-if __name__ == '__main__':
-	rclpy.init()
+# 	def wait_test(self):
+# 		print("\nTEST 1: BEAKER TO TRUE\n")
+# 		tester_client_node.wait_for_specific_status('beaker', True)
 
-	# ready_status_service_node = ReadyStatusPublisherNode()
-	tester_client_node = RobotClientNode('tester_1')
-	exec = MultiThreadedExecutor(4)
+# 		print("\nTEST 2: BEAKER TO FALSE\n")
+# 		tester_client_node.wait_for_specific_status('beaker', False)
 
-	exec.add_node(tester_client_node)
-	# exec.add_node(ready_status_service_node)
+# 		print("\nTEST 3: BEAKER_CONV TO TRUE\n")
+# 		tester_client_node.wait_for_specific_status('beaker_conv', True)
+
+# 		print("\nTEST 4: BEAKER_CONV TO FALSE\n")
+# 		tester_client_node.wait_for_specific_status('beaker_conv', False)
+
+# 		print("\nTEST 5: ROOMBA_BASE3 TO TRUE\n")
+# 		tester_client_node.wait_for_specific_status('roomba_base3', True)
+
+# 		print("\nTEST COMPLETE\n")
+
+# ########################################################
+
+# def main(args=None):
+# 	pass
 
 
-	keycom = KeyCommander([
-		# (KeyCode(char='w'), tester_client_node.wait_test),
-		(KeyCode(char='t'), tester_client_node.set_roomba_base2_true),
-		(KeyCode(char='f'), tester_client_node.set_roomba_base2_false),
+# if __name__ == '__main__':
+# 	rclpy.init()
 
-		(KeyCode(char='y'), tester_client_node.set_beaker_true),
-		(KeyCode(char='g'), tester_client_node.set_beaker_false),
+# 	# ready_status_service_node = ReadyStatusPublisherNode()
+# 	tester_client_node = RobotClientNode('tester_1')
+# 	exec = MultiThreadedExecutor(4)
+
+# 	exec.add_node(tester_client_node)
+# 	# exec.add_node(ready_status_service_node)
+
+
+# 	keycom = KeyCommander([
+# 		# (KeyCode(char='w'), tester_client_node.wait_test),
+# 		(KeyCode(char='t'), tester_client_node.set_roomba_base2_true),
+# 		(KeyCode(char='f'), tester_client_node.set_roomba_base2_false),
+
+# 		(KeyCode(char='y'), tester_client_node.set_beaker_true),
+# 		(KeyCode(char='g'), tester_client_node.set_beaker_false),
 		
-		(KeyCode(char='u'), tester_client_node.set_beaker_conv_true),
-		(KeyCode(char='h'), tester_client_node.set_beaker_conv_false),
+# 		(KeyCode(char='u'), tester_client_node.set_beaker_conv_true),
+# 		(KeyCode(char='h'), tester_client_node.set_beaker_conv_false),
 
-		(KeyCode(char='i'), tester_client_node.set_bunsen_conv_true),
-		(KeyCode(char='j'), tester_client_node.set_bunsen_conv_false),
+# 		(KeyCode(char='i'), tester_client_node.set_bunsen_conv_true),
+# 		(KeyCode(char='j'), tester_client_node.set_bunsen_conv_false),
 
-		(KeyCode(char='o'), tester_client_node.set_bunsen_true),
-		(KeyCode(char='k'), tester_client_node.set_bunsen_false),
+# 		(KeyCode(char='o'), tester_client_node.set_bunsen_true),
+# 		(KeyCode(char='k'), tester_client_node.set_bunsen_false),
 
-		(KeyCode(char='p'), tester_client_node.set_roomba_base3_true),
-		(KeyCode(char='l'), tester_client_node.set_roomba_base3_false),
-	])
+# 		(KeyCode(char='p'), tester_client_node.set_roomba_base3_true),
+# 		(KeyCode(char='l'), tester_client_node.set_roomba_base3_false),
+# 	])
 
-	# Display the key command options to the user
-	print("Press buttons to do stuff")
+# 	# Display the key command options to the user
+# 	print("Press buttons to do stuff")
 
 
-	try:
-		exec.spin()
-	except KeyboardInterrupt:
-		print("KeyboardInterrupt, shutting down.")
-	except Exception as error:
-		print(f"Unexpected error: {error}")
-	finally:
-		exec.shutdown()
-		tester_client_node.destroy_node()
-		rclpy.shutdown()
+# 	try:
+# 		exec.spin()
+# 	except KeyboardInterrupt:
+# 		print("KeyboardInterrupt, shutting down.")
+# 	except Exception as error:
+# 		print(f"Unexpected error: {error}")
+# 	finally:
+# 		exec.shutdown()
+# 		tester_client_node.destroy_node()
+# 		rclpy.shutdown()
