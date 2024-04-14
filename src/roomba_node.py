@@ -64,23 +64,25 @@ error_notes = [
 ]
 
 topic = "vandalrobot"
+# namespace = 'create3_05AE'
 
-# Initialize and connect to other nodes
-rclpy.init()
-namespace = 'create3_05AE'
-dock_sensor = DockStatusMonitorNode(namespace)
-ir_sensor = IrMonitorNode(namespace)
-odometry_sensor = OdomNode(namespace)
-roomba_status_client = RobotClientNode(namespace)
+# # Initialize and connect to other nodes
+# rclpy.init()
+# dock_sensor = DockStatusMonitorNode(namespace)
+# ir_sensor = IrMonitorNode(namespace)
+# odometry_sensor = OdomNode(namespace)
+# roomba_status_client = RobotClientNode(namespace)
+
+
 
 class RoombaInfo(Node):
-	def __init__(self, namespace):
+	def __init__(self, namespace, dock_sensor, ir_sensor, odometry_sensor, roomba_status_client):
 		super().__init__('roomba_info_node')
-		
 		self.dock_sensor = dock_sensor
 		self.ir_sensor = ir_sensor
 		self.odometry_sensor = odometry_sensor
 		self.roomba_status_client = roomba_status_client
+
 
 		# Subscriptions: 
 		# Split up to compensate for noisy subscriptions
@@ -127,46 +129,16 @@ class RoombaInfo(Node):
 
 
 	def ir_opcode_callback(self, msg):
-		print("msg", msg)
-		print(type(msg))
-		self.latest_ir_opcode = msg 
-		print("msg.data:", self.latest_ir_opcode)
-
-		# print("IrOpcode from within the callback:", self.latest_ir_opcode)
-		print("DEBUG: All opcode information:", msg)
-		self.get_logger().info(f"Received IrOpcode: {self.latest_ir_opcode}")
-
-
-# # Define an instance of the RoombaInfo node for use in the Roomba node
-# info = RoombaInfo(namespace)
-
+		try:
+			self.latest_ir_opcode = msg.data
+			self.get_logger().info(f"Received IrOpcode: {self.latest_ir_opcode}")
+		except Exception as e:
+			self.get_logger().error(f"Failed to handle IrOpcode message: {e}")
 
 class Roomba(Node):
-	def __init__(self, namespace):
+	def __init__(self, namespace, roomba_info):
 		super().__init__('roomba_node')
-
-		# Initialize node variables
-		self.dock_sensor = RoombaInfo.dock_sensor
-		self.ir_sensor = RoombaInfo.ir_sensor
-		self.odometry_sensor = RoombaInfo.odometry_sensor
-		self.roomba_status_client = RoombaInfo.roomba_status_client
-
-		# # Subscriptions: 
-		# # Split up to compensate for noisy subscriptions
-		# cb_dockstatus = MutuallyExclusiveCallbackGroup() # Perhaps unneeded since the dock_status_node takes care of the dockstatus
-		# cb_ir = MutuallyExclusiveCallbackGroup()
-		# cb_pose = MutuallyExclusiveCallbackGroup()
-
-
-		# self.dock_status_sub_ = self.create_subscription(Bool, f'/{namespace}/check_dock_status', 
-		# 										self.dock_status_callback, 10, callback_group=cb_dockstatus)
-
-		# self.ir_opcode_sub_ = self.create_subscription(String, f'/{namespace}/ir_opcode_number', 
-		# 												self.ir_opcode_callback, qos_profile_sensor_data, callback_group=cb_ir)
-
-		# self.current_pose_sub_ = self.create_subscription(PoseStamped, f'/{namespace}/pose_stamped', 
-		# 										self.pose_callback, qos_profile_sensor_data, callback_group=cb_pose)
-
+		self.roomba_info = roomba_info
 
 		# Actions:
 		cb_Action = MutuallyExclusiveCallbackGroup()
@@ -185,21 +157,12 @@ class Roomba(Node):
 		self.rotate_ac = ActionClient(self, RotateAngle, f'/{namespace}/rotate_angle', 
 											callback_group=cb_Action)
 		
-		
-		# # Services:
-		# # ResetPose service client and initialize PoseStamped variable for position reset using odometry
-		# self.reset_pose_srv = self.create_client(ResetPose, f'/{namespace}/reset_pose')
-		
-		# # Ensure service is available
-		# while not self.reset_pose_srv.wait_for_service(timeout_sec=1.0):
-		# 	self.get_logger().info('ResetPose service not available, waiting again...')
-
 
 		# Variable Initialization
-		self.latest_dock_status = info.latest_dock_status #########!!!!!!!!!!!!! Was None
-		self.latest_pose_stamped = info.latest_pose_stamped
-		self.latest_ir_opcode = info.latest_ir_opcode
-		self.ir_opcode_history = info.ir_opcode_history  # A deque to store the history of opcodes in the auto-docking function
+		self.latest_dock_status = roomba_info.latest_dock_status #########!!!!!!!!!!!!! Was None
+		self.latest_pose_stamped = roomba_info.latest_pose_stamped
+		self.latest_ir_opcode = roomba_info.latest_ir_opcode
+		self.ir_opcode_history = roomba_info.ir_opcode_history  # A deque to store the history of opcodes in the auto-docking function
 
 
 	def reportSender(self, label="Undefined", action="Undefined",
@@ -310,24 +273,6 @@ class Roomba(Node):
 			self.get_logger().error('Failed to call ResetPose service: %r' % (e,))
 
 
-	# def record_pose(self):
-	# 	"""
-	# 	Store the current pose for future use.
-	# 	"""
-	# 	odometry_sensor.publish_odometry()
-	# 	time.sleep(1) # Provides enough time to avoid errors, apparently
-	# 	if self.latest_pose_stamped is not None:
-	# 		self.recorded_pose = self.latest_pose_stamped
-	# 		self.get_logger().info("PoseStamped recorded:\n")
-			
-	# 		# DEBUG: Check the coordinates
-	# 		# print(int(self.latest_pose_stamped.pose.position.x*1000))
-	# 		# print("\n", int(self.latest_pose_stamped.pose.position.y*1000))
-	# 		# print("\n", int(self.latest_pose_stamped.pose.position.z*1000))
-
-	# 	else:
-	# 		self.get_logger().error("No current pose available to record.")
-
 	def record_pose(self):
 		"""
 		Store the current pose for future use.
@@ -344,7 +289,7 @@ class Roomba(Node):
 			# print("\n", int(self.latest_pose_stamped.pose.position.z*1000))
 
 		else:
-			self.get_logger().info("No current pose available to record.")
+			self.get_logger().error("No current pose available to record.")
 
 
 	def drive_amnt(self, distance):
@@ -526,32 +471,32 @@ class Roomba(Node):
 			""" Run a simulated BeakerNode and BunsenNode for toggling ready statuses """			
 			##############################################################################################			
 
-			# ### Actions for process 1: Navigating from base1 to base 2 ###
-			# # Undock and reset pose
-			# self.reportSender(label=roomba_label_1, action="undock_start", isAtBase1=True, isMoving=False)
-			# self.undock()
-			# self.reportSender(roomba_label_1, action="undock_done", isAtBase1=False, isMoving=True)
+			### Actions for process 1: Navigating from base1 to base 2 ###
+			# Undock and reset pose
+			self.reportSender(label=roomba_label_1, action="undock_start", isAtBase1=True, isMoving=False)
+			self.undock()
+			self.reportSender(roomba_label_1, action="undock_done", isAtBase1=False, isMoving=True)
 
-			# # rotate amount
-			# self.reportSender(roomba_label_1, action="rotate_start", isMoving=True)
-			# self.rotate_amnt(-pi/5)
-			# self.reportSender(roomba_label_1, action="rotate_done", isMoving=True)
+			# rotate amount
+			self.reportSender(roomba_label_1, action="rotate_start", isMoving=True)
+			self.rotate_amnt(-pi/5)
+			self.reportSender(roomba_label_1, action="rotate_done", isMoving=True)
 
-			# # drive amount
-			# self.reportSender(roomba_label_1, action="drive_start", isMoving=True)
-			# self.drive_amnt(2.3)
-			# self.reportSender(roomba_label_1, action="drive_done", isMoving=True)
+			# drive amount
+			self.reportSender(roomba_label_1, action="drive_start", isMoving=True)
+			self.drive_amnt(2.3)
+			self.reportSender(roomba_label_1, action="drive_done", isMoving=True)
    
-			# # rotate amount to face the dock
-			# self.reportSender(roomba_label_1, action="rotate_start", isMoving=True)
-			# self.rotate_amnt(pi/5)
-			# self.reportSender(roomba_label_1, action="rotate_done", isMoving=True)
-			# ############################
+			# rotate amount to face the dock
+			self.reportSender(roomba_label_1, action="rotate_start", isMoving=True)
+			self.rotate_amnt(pi/5)
+			self.reportSender(roomba_label_1, action="rotate_done", isMoving=True)
+			############################
 
-			# # dock
-			# self.reportSender(roomba_label_1, action="dock_start", isMoving=True)
-			# self.dock()
-			# self.reportSender(roomba_label_1, action="dock_done", isMoving=False, isAtBase2=True)			
+			# dock
+			self.reportSender(roomba_label_1, action="dock_start", isMoving=True)
+			self.dock()
+			self.reportSender(roomba_label_1, action="dock_done", isMoving=False, isAtBase2=True)			
 
 
 			# AFTER DOCKING AT BASE2
@@ -698,12 +643,6 @@ class Roomba(Node):
 
 
 
-		except Exception as error:
-			roomba.chirp(error_notes)  # Assuming `chirp` is a method to indicate errors audibly
-			self.get_logger().error(f"Error in test: {error}")
-
-
-
 def stop_all(exec,roomba,rclpy):
 	while not brokerSender.stop_all_message :
 				# print(brokerSender.start_all_message)
@@ -715,25 +654,26 @@ def stop_all(exec,roomba,rclpy):
 
 
 if __name__ == '__main__':
-	# rclpy.init()
+	rclpy.init()
+	namespace = 'create3_05AE'
+	dock_sensor = DockStatusMonitorNode(namespace)
+	ir_sensor = IrMonitorNode(namespace)
+	odometry_sensor = OdomNode(namespace)
+	roomba_status_client = RobotClientNode(namespace)
 
-	roomba = Roomba(namespace)
-	info = RoombaInfo(namespace)
-	exec = MultiThreadedExecutor(10)
+	print("B4")
+	info = RoombaInfo(namespace, dock_sensor, ir_sensor, odometry_sensor, roomba_status_client)
+	print("After info")
+	roomba = Roomba(namespace, info)
+	print("After roomba")
 
+	exec = MultiThreadedExecutor(7)
 	exec.add_node(roomba)
 	exec.add_node(info)
 
-	exec.add_node(dock_sensor)
-	exec.add_node(ir_sensor)
-	exec.add_node(odometry_sensor)
-	exec.add_node(roomba_status_client)
-	
-	# # NOTE: This node should be spun up independently
-	# exec.add_node(ready_status_publisher_node) 
-	
 
-	time.sleep(0.1)
+
+	# time.sleep(0.1)
 	roomba.chirp(ready_notes)
 
 	# # Establish start and stop messaging from the broker
@@ -760,6 +700,13 @@ if __name__ == '__main__':
 		print(f"Unexpected error: {error}")
 	finally:
 		exec.shutdown()
-		rclpy.try_shutdown()
+
+		info.destroy_node()
+		roomba.destroy_node()
+		dock_sensor.destroy_node()
+		ir_sensor.destroy_node()
+		odometry_sensor.destroy_node()
+		roomba_status_client.destroy_node()
+		rclpy.shutdown()
 
 
