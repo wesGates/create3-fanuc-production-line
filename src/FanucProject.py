@@ -38,9 +38,6 @@ from brokerSender import mqttc
 
 topic = "vandalrobot"
 
-ready_status_publisher_node = ReadyStatusPublisherNode()
-readiness_tracker_node = ReadinessTrackerNode()
-
 # Node that listens to the fanuc topic
 class FanucTopic(Node):
 	def __init__(self, namespace):
@@ -80,31 +77,6 @@ class FanucTopic(Node):
 
 		# This will hold the current value from the Fanuc topic
 		self.curValue = False # Temporary default value
-
-		self.status_file_path = 'robot_status.txt'
-
-		# Initialize node objects within the class for node operations
-		self.ready_status_publisher_node = ready_status_publisher_node
-		self.readiness_tracker_node = readiness_tracker_node
-
-
-		# Creating callback group for busy ReadyStatus message
-		cb_ready_status = MutuallyExclusiveCallbackGroup()
-
-		# Subscribe to the published topic to update latest_ready_status
-		self.ready_status_subscription_ = self.create_subscription(ReadyStatus, 'robot_ready_status', self.ready_status_callback, 10, callback_group=cb_ready_status)
-		
-		# Service for checking the status of any robot
-		self.client = self.create_client(CheckReadiness, 'check_readiness')
-
-		while not self.client.wait_for_service(timeout_sec=1.0):
-			self.get_logger().info('Service not available, waiting again...')
-		print("Readiness Tracker is Available. ")
-
-		# Initialize the variable that stores the robot ready status information
-		# Ready statuses are updated in the callback functions.
-		self.latest_ready_status = None
-
 		
 	def gripListener(self, msg):
 		"""
@@ -169,101 +141,6 @@ class FanucTopic(Node):
 
 		with open(self.status_file_path, 'w') as file:
 			file.write(','.join(statuses) + '\n')
-
-	def display_robot_statuses(self):
-		# DUBUGGING: Used in key commander to display the robot states on keypress in the terminal
-		try: 
-			self.ready_status_publisher_node.display_robot_statuses()
-		except:
-			self.get_logger().error(f"Error in display: {error}")
-
-	def publish_robot_status(self):
-		self.ready_status_publisher_node.publish_ready_status()
-		self.get_logger().info('Published the updated ready status')
-
-	def set_beaker_true(self):
-		try: 
-			print("Setting BEAKER: True")
-			self.ready_status_publisher_node.set_ready_status(beaker_status=True)
-			self.publish_robot_status()
-		except:
-			self.get_logger().error(f"Error in display: {error}") # Error logging
-
-	def set_beaker_false(self):
-		try: 
-			print("Setting BEAKER: False")
-			self.ready_status_publisher_node.set_ready_status(beaker_status=False)
-			self.publish_robot_status()
-		except:
-			self.get_logger().error(f"Error in display: {error}") # Error logging
-
-	def set_beaker_conv_true(self):
-		try: 
-			print("Setting BEAKER_CONV: True")
-			self.ready_status_publisher_node.set_ready_status(beaker_conv_status=True)
-			self.publish_robot_status()
-		except:
-			self.get_logger().error(f"Error in display: {error}") # Error logging
-
-	def set_beaker_conv_false(self):
-		try: 
-			print("Setting BEAKER_CONV: False")
-			self.ready_status_publisher_node.set_ready_status(beaker_conv_status=False)
-			self.publish_robot_status()
-		except:
-			self.get_logger().error(f"Error in display: {error}") # Error logging
-
-
-	def send_request(self, other_robot):
-		request = CheckReadiness.Request()
-		request.robot1 = other_robot
-		future = self.client.call_async(request)
-		return future
-
-
-	def check_robot_status(self, other_robot, expected_status):
-		self.get_logger().info(f"Checking if {other_robot} is {'ready' if expected_status else 'not ready'}.")
-
-		while True:
-			future = self.send_request(other_robot)
-			rclpy.spin_until_future_complete(self, future)
-
-			if future.result() is not None:
-				actual_status = future.result().ready
-				if actual_status == expected_status:
-					print("SUCCESS")
-					self.get_logger().info(f'{other_robot} status matches the expected status: {expected_status}.')
-					break  # Exit the loop if the status matches
-				else:
-					# This message will now reflect the actual status received and the expected status.
-					self.get_logger().info(f'{other_robot} status does not match. Expected: {expected_status}. Actual: {actual_status}. Retrying...')
-					time.sleep(1)  # Wait for a bit before retrying
-			else:
-				self.get_logger().error(f'Exception while calling service: {future.exception()}')
-				time.sleep(1)  # Wait for a bit before retrying in case of an exception
-
-	def check_roomba_base2(self):
-		# NOTE: Remember to set beaker status to False after picking up dice block!
-		print("Setting beaker status to True")
-		self.set_beaker_true()
-
-		print("Check if roomba is ready at base2")
-		self.check_robot_status('roomba_base2', True)
-
-		print("!!! Both roomba_base2 and beaker are ready !!!")
-		print("\n Remember to set beaker to False for the dice block handoff. ")
-
-	def check_bunsen_conv(self):
-		# NOTE: Remember to set beaker_conv to false after this function
-
-		print("Setting beaker_conv to true")
-		self.set_beaker_conv_true
-
-		print("Check if bunsen is ready at conveyor")
-		self.check_robot_status('bunsen_conv', True)
-
-		print("!!! Both beaker_conv and bunsen_conv are ready !!!")
-		print("\n Remember to set beaker_conv to False.")
 
 
 # 'Main' node
@@ -602,7 +479,7 @@ if __name__ == '__main__':
 	mainBunsen = FanucActions('bunsen')
 	listenerBunsen = FanucTopic('bunsen')
 
-	exec = MultiThreadedExecutor(10)
+	exec = MultiThreadedExecutor(7)
 
 	broker_thread = threading.Thread(target=mqttc.loop_start)
 	broker_thread.start()
