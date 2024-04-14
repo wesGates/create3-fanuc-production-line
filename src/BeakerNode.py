@@ -19,14 +19,6 @@ from my_interfaces.srv import CheckReadiness
 from ReadyStatusPublisherNode import ReadyStatusPublisherNode
 from ReadinessTrackerNode import ReadinessTrackerNode
 
-from ReadyStatusPublisherNode import ReadyStatusPublisherNode
-
-import rclpy
-from rclpy.node import Node
-import time
-
-from my_interfaces.msg import ReadyStatus  # Adjust the import path based on your package structure
-
 
 # Initialize and connect to OTHER nodes
 rclpy.init()
