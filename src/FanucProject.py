@@ -493,7 +493,10 @@ if __name__ == '__main__':
 	keycom = KeyCommander([(KeyCode(char='r'), mainBunsen.test),])
 	print("Ready")
 	
-	try:
+	exec.spin()
+	rclpy.shutdown()
+	exec.shutdown()
+	'''try:
 		exec.spin()
 	except KeyboardInterrupt:
 		print("KeyboardInterrupt, shutting down.")
@@ -508,4 +511,4 @@ if __name__ == '__main__':
 		print(f"Unexpected error: {error}")
 	finally:
 		exec.shutdown()
-		rclpy.try_shutdown()
+		rclpy.try_shutdown()'''
