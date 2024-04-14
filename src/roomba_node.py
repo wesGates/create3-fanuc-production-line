@@ -120,14 +120,13 @@ class Roomba(Node):
 											callback_group=cb_Action)
 		
 		
-		# # Services:
-		# # ResetPose service client and initialize PoseStamped variable for position reset using odometry
-		# self.reset_pose_srv = self.create_client(ResetPose, f'/{namespace}/reset_pose')
+		# Services:
+		# ResetPose service client and initialize PoseStamped variable for position reset using odometry
+		self.reset_pose_srv = self.create_client(ResetPose, f'/{namespace}/reset_pose')
 		
-		# # Ensure service is available
-		# while not self.reset_pose_srv.wait_for_service(timeout_sec=1.0):
-		# 	self.get_logger().info('ResetPose service not available, waiting again...')
-
+		# Ensure service is available
+		while not self.reset_pose_srv.wait_for_service(timeout_sec=1.0):
+			self.get_logger().info('ResetPose service not available, waiting again...')
 
 
 		# Variable Initialization
@@ -445,12 +444,12 @@ class Roomba(Node):
 	def takeoff(self):
 		try:
 		
-			# Waits for start message from the broker before starting the circuit
-			while not brokerSender.start_all_message :
-				# print(brokerSender.start_all_message)
-				print("Waiting for start_all message from the broker...")
-				time.sleep(1.0)
-				pass
+			# # Waits for start message from the broker before starting the circuit
+			# while not brokerSender.start_all_message :
+			# 	# print(brokerSender.start_all_message)
+			# 	print("Waiting for start_all message from the broker...")
+			# 	time.sleep(1.0)
+			# 	pass
 
 			print("Start all message received from the broker!")
 
@@ -579,11 +578,21 @@ class Roomba(Node):
 			# Step 2-4: Reset roomba_base3 to False
 			self.get_logger().info("Setting roomba_base3 status to False...")
 			self.roomba_status_client.update_robot_status('roomba_base3', False)
+			
+			#####################################################################
+			
 			### Actions for process 3: Navigating to base1 from base3 ###
 			self.reportSender(roomba_label_3, action="undock_start", isAtBase3=True, isMoving=False)
 			self.undock()
 			self.reportSender(roomba_label_3, action="undock_done", isAtBase3=False, isMoving=True)
+   
 			#####################################################################
+			# AFTER LEAVING BASE3
+			# Step 3: Print statement indicating the transition
+			self.get_logger().info("Success! Traveling from base 3 to base 1.")
+			print("\nYou may run the test function again on specific button press ")
+			#####################################################################
+
 
 			# drive amount
 			self.reportSender(roomba_label_3, action="drive_start", isMoving=True)
@@ -620,6 +629,7 @@ class Roomba(Node):
 			self.dock()
 			self.reportSender(roomba_label_4, action="dock_done", isMoving=False, isAtBase1=True)
 
+
 		except Exception as error:
 			roomba.chirp(error_notes)
 			self.get_logger().error(f"Error in takeoff: {error}")
@@ -646,8 +656,6 @@ if __name__ == '__main__':
 	# rclpy.init()
 
 	roomba = Roomba(namespace)
-	# roomba_statuses = RoombaTopic()
-	# roomba_status_client = RobotClientNode(namespace)
 	exec = MultiThreadedExecutor(8)
 
 	exec.add_node(roomba)
@@ -656,12 +664,12 @@ if __name__ == '__main__':
 	exec.add_node(odometry_sensor)
 	exec.add_node(roomba_status_client)
 	
-	# NOTE: This node should be spun up independently
+	# # NOTE: This node should be spun up independently
 	# exec.add_node(ready_status_publisher_node) 
 	
 
-	# time.sleep(0.1)
-	# roomba.chirp(ready_notes)
+	time.sleep(0.1)
+	roomba.chirp(ready_notes)
 
 	# # Establish start and stop messaging from the broker
 	# broker_thread = threading.Thread(target=mqttc.loop_start)
@@ -671,11 +679,10 @@ if __name__ == '__main__':
 	# stop_thread.start()
 
 	keycom = KeyCommander([
-		# (KeyCode(char='1'), roomba.takeoff),
-		(KeyCode(char='2'), roomba.test),
+		(KeyCode(char='1'), roomba.takeoff),
 
 	])
-	print(" Press '2' to intitiate launch")
+	print(" Press '1' to intitiate launch")
 
 	try:
 		exec.spin()  # execute Roomba callbacks until shutdown or destroy is called
