@@ -146,10 +146,10 @@ class FanucActions(Node):
 		self.namespace = namespace
 		if self.namespace == 'beaker':
 			self.beaker_status_client = beaker_status_client
-			self.topicNode = 'listenerBeaker'
+			self.topicNode = listenerBeaker
 		if self.namespace == 'bunsen':
 			self.bunsen_status_client = bunsen_status_client
-			self.topicNode = 'listenerBunsen'
+			self.topicNode = listenerBunsen
 
 
 		# Actions, note their callback groups
@@ -530,7 +530,7 @@ if __name__ == '__main__':
 	print("Ready")
 	
 	try:
-		exec.spin()  # execute bunsen callbacks until shutdown or destroy is called
+		exec.spin()
 	except KeyboardInterrupt:
 		print("KeyboardInterrupt, shutting down.")
 		mainBeaker.destroy_node()
