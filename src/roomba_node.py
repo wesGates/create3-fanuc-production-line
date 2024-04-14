@@ -65,7 +65,6 @@ error_notes = [
 
 topic = "vandalrobot"
 
-
 # Initialize and connect to other nodes
 rclpy.init()
 namespace = 'create3_05AE'
@@ -79,11 +78,21 @@ class RoombaInfo(Node):
 	def __init__(self, namespace):
 		super().__init__('roomba_info_node')
 		
+		self.roomba_status_client = roomba_status_client
+
+		# Variable Initialization
+		self.latest_dock_status = True #########!!!!!!!!!!!!! Was None
+
+
+class Roomba(Node):
+	def __init__(self, namespace):
+		super().__init__('roomba_node')
+
+		# Initialize node objects within the class for node operations
 		self.dock_sensor = dock_sensor
 		self.ir_sensor = ir_sensor
 		self.odometry_sensor = odometry_sensor
-		self.roomba_status_client = roomba_status_client
-
+		# self.roomba_status_client = roomba_status_client
 
 		# Subscriptions: 
 		# Split up to compensate for noisy subscriptions
@@ -100,50 +109,6 @@ class RoombaInfo(Node):
 
 		self.current_pose_sub_ = self.create_subscription(PoseStamped, f'/{namespace}/pose_stamped', 
 												self.pose_callback, qos_profile_sensor_data, callback_group=cb_pose)
-
-		# Services:
-		# ResetPose service client and initialize PoseStamped variable for position reset using odometry
-		self.reset_pose_srv = self.create_client(ResetPose, f'/{namespace}/reset_pose')
-		
-		# Ensure service is available
-		while not self.reset_pose_srv.wait_for_service(timeout_sec=1.0):
-			self.get_logger().info('ResetPose service not available, waiting again...')
-
-
-		# Variable Initialization
-		self.latest_dock_status = True #########!!!!!!!!!!!!! Was None
-		self.latest_pose_stamped = None
-		self.latest_ir_opcode = None
-		self.ir_opcode_history = deque(maxlen=20)  # A deque to store the history of opcodes in the auto-docking function
-
-
-
-class Roomba(Node):
-	def __init__(self, namespace):
-		super().__init__('roomba_node')
-
-		## Initialize node objects within the class for node operations
-		# self.dock_sensor = dock_sensor
-		# self.ir_sensor = ir_sensor
-		# self.odometry_sensor = odometry_sensor
-		# self.roomba_status_client = roomba_status_client
-
-		# # Subscriptions: 
-		# # Split up to compensate for noisy subscriptions
-		# cb_dockstatus = MutuallyExclusiveCallbackGroup() # Perhaps unneeded since the dock_status_node takes care of the dockstatus
-		# cb_ir = MutuallyExclusiveCallbackGroup()
-		# cb_pose = MutuallyExclusiveCallbackGroup()
-
-
-		# self.dock_status_sub_ = self.create_subscription(Bool, f'/{namespace}/check_dock_status', 
-		# 										self.dock_status_callback, 10, callback_group=cb_dockstatus)
-
-		# self.ir_opcode_sub_ = self.create_subscription(String, f'/{namespace}/ir_opcode_number', 
-		# 												self.ir_opcode_callback, qos_profile_sensor_data, callback_group=cb_ir)
-
-		# self.current_pose_sub_ = self.create_subscription(PoseStamped, f'/{namespace}/pose_stamped', 
-		# 										self.pose_callback, qos_profile_sensor_data, callback_group=cb_pose)
-
 
 
 		# Actions:
@@ -164,20 +129,20 @@ class Roomba(Node):
 											callback_group=cb_Action)
 		
 		
-		# # Services:
-		# # ResetPose service client and initialize PoseStamped variable for position reset using odometry
-		# self.reset_pose_srv = self.create_client(ResetPose, f'/{namespace}/reset_pose')
+		# Services:
+		# ResetPose service client and initialize PoseStamped variable for position reset using odometry
+		self.reset_pose_srv = self.create_client(ResetPose, f'/{namespace}/reset_pose')
 		
-		# # Ensure service is available
-		# while not self.reset_pose_srv.wait_for_service(timeout_sec=1.0):
-		# 	self.get_logger().info('ResetPose service not available, waiting again...')
+		# Ensure service is available
+		while not self.reset_pose_srv.wait_for_service(timeout_sec=1.0):
+			self.get_logger().info('ResetPose service not available, waiting again...')
 
 
-		# # Variable Initialization
-		# self.latest_dock_status = True #########!!!!!!!!!!!!! Was None
-		# self.latest_pose_stamped = None
-		# self.latest_ir_opcode = None
-		# self.ir_opcode_history = deque(maxlen=20)  # A deque to store the history of opcodes in the auto-docking function
+		# Variable Initialization
+		self.latest_dock_status = True #########!!!!!!!!!!!!! Was None
+		self.latest_pose_stamped = None
+		self.latest_ir_opcode = None
+		self.ir_opcode_history = deque(maxlen=20)  # A deque to store the history of opcodes in the auto-docking function
 
 
 	def reportSender(self, label="Undefined", action="Undefined",
@@ -198,7 +163,7 @@ class Roomba(Node):
 			"nodeId": "gatesroomba12",
 			"productLine": "moscow",
 			"roombareport": {
-				"isDock": info.latest_dock_status,
+				"isDock": self.latest_dock_status,
 				"action": action,
 				"label":label,
 				"isReady": isReady,
@@ -223,8 +188,8 @@ class Roomba(Node):
 
 
 	def dock_status_callback(self, msg):
-		info.latest_dock_status = msg.data
-		self.get_logger().info(f"Received /is_docked status: {info.latest_dock_status}")
+		self.latest_dock_status = msg.data
+		self.get_logger().info(f"Received /is_docked status: {self.latest_dock_status}")
 
 
 	def pose_callback(self, msg):
@@ -417,7 +382,7 @@ class Roomba(Node):
 
 
 	def docking(self):
-		while info.latest_dock_status != 'True':  # Ensuring the comparison is to a string if that's what's expected
+		while self.latest_dock_status != 'True':  # Ensuring the comparison is to a string if that's what's expected
 			try:
 				self.dock_sensor.publish_dock_status()
 				self.dock_sensor.publish_dock_status()
@@ -425,11 +390,11 @@ class Roomba(Node):
 
 				# Add the latest opcode to the history
 				print("Dock function IrOpcode readout:", self.latest_ir_opcode)
-				print("Start- latest_dock_status:", info.latest_dock_status)
+				print("Start- latest_dock_status:", self.latest_dock_status)
 
 				# Check if the latest_ir_opcode has been updated
 				if self.latest_ir_opcode is not None:
-					if info.latest_dock_status == True:
+					if self.latest_dock_status == True:
 						break
 
 					if self.latest_ir_opcode == 160 or self.latest_ir_opcode == 161:
@@ -475,7 +440,7 @@ class Roomba(Node):
 				# Print the current count of the deque
 				print("Current opcode history count:", len(self.ir_opcode_history))
 				self.dock_sensor.publish_dock_status()
-				# print("END- latest_dock_status:", info.latest_dock_status)
+				# print("END- latest_dock_status:", self.latest_dock_status)
 
 				print("\n")
 				time.sleep(0.3)  # Sleep for throttling
@@ -540,20 +505,20 @@ class Roomba(Node):
 			#####################################################################
 			# Step 1-1: Set the status of roomba_base2 to True after docking
 			self.get_logger().info("Setting roomba_base2 status to True...")
-			info.roomba_status_client.update_robot_status('roomba_base2', True)
+			self.roomba_status_client.update_robot_status('roomba_base2', True)
 
 			# Step 1-2: Wait for beaker to become True, indicating it's in position for the dice pickup
 			self.get_logger().info("Waiting for beaker status to become True")
-			info.roomba_status_client.wait_for_specific_status('beaker', True)
+			self.roomba_status_client.wait_for_specific_status('beaker', True)
 
 			# Step 1-3: Wait for beaker to become False, indicating beaker has the dice block and has moved away
 			self.get_logger().info("Waiting for beaker status to become False...")
-			info.roomba_status_client.wait_for_specific_status('beaker', False)
+			self.roomba_status_client.wait_for_specific_status('beaker', False)
 			self.get_logger().info("beaker status is now False.")
 
 			# Step 1-4: Set roomba_base2 status to False
 			self.get_logger().info("Setting roomba_base2 status to False...")
-			info.roomba_status_client.update_robot_status('roomba_base2', False)
+			self.roomba_status_client.update_robot_status('roomba_base2', False)
 			#####################################################################
 
 
@@ -607,21 +572,21 @@ class Roomba(Node):
 			#####################################################################
 			# Step 2-1: After docking, wait for bunsen to become True before setting roomba_base3 to true
 			self.get_logger().info("Waiting for bunsen status to become True...")
-			info.roomba_status_client.wait_for_specific_status('bunsen', True)
+			self.roomba_status_client.wait_for_specific_status('bunsen', True)
 			self.get_logger().info("bunsen status is now True.")
 
 			# Step 2-2: Tell bunsen that the dice block can be delivered
 			self.get_logger().info("Setting roomba_base3 status to True...")
-			info.roomba_status_client.update_robot_status('roomba_base3', True)
+			self.roomba_status_client.update_robot_status('roomba_base3', True)
 
 			# Step 2-3: Wait for bunsen to indicate that the dice block was delivered, and has moved away
 			self.get_logger().info("Waiting for bunsen status to become False...")
-			info.roomba_status_client.wait_for_specific_status('bunsen', False)
+			self.roomba_status_client.wait_for_specific_status('bunsen', False)
 			self.get_logger().info("bunsen status is now False.")
 
 			# Step 2-4: Reset roomba_base3 to False
 			self.get_logger().info("Setting roomba_base3 status to False...")
-			info.roomba_status_client.update_robot_status('roomba_base3', False)
+			self.roomba_status_client.update_robot_status('roomba_base3', False)
 			
 			#####################################################################
 			
@@ -704,7 +669,7 @@ if __name__ == '__main__':
 	exec = MultiThreadedExecutor(8)
 
 	exec.add_node(roomba)
-	exec.add_node(info)
+	exec.add_node(roomba_topic)
 
 	exec.add_node(dock_sensor)
 	exec.add_node(ir_sensor)
