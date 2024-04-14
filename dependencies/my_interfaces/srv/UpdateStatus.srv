@@ -1,0 +1,6 @@
+# Request
+string robot_name
+bool status
+---
+# Response
+bool success

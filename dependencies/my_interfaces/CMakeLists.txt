@@ -15,7 +15,8 @@ find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ReadyStatus.msg"
-  "srv/CheckReadiness.srv"
+  "srv/CheckRobotStatus.srv"
+  "srv/UpdateStatus.srv"
   DEPENDENCIES std_msgs
 )
 

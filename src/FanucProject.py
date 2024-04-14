@@ -58,18 +58,18 @@ class FanucTopic(Node):
 		
 
 		# Create a Service node for sending data to 'Main', could be a Topic also
-		self.gripperSrv = self.create_service(Trigger, 'check_gripper', self.service_callback)
+		'''self.gripperSrv = self.create_service(Trigger, 'check_gripper', self.service_callback)
 		self.cartSrv = self.create_service(Trigger, 'check_cartesian', self.service_callback)
 		self.jointSrv = self.create_service(Trigger, 'check_joint', self.service_callback)
 		self.convSrv = self.create_service(Trigger, 'check_conveyor', self.service_callback)
-		self.moveSrv = self.create_service(Trigger, 'check_moving', self.service_callback)
+		self.moveSrv = self.create_service(Trigger, 'check_moving', self.service_callback)'''
 		
 		# This subscribes to the Fanuc topic
-		self.gripperSubs = self.create_subscription(CurGripper, f'/{namespace}/grip_status', self.gripListener, qos_profile_sensor_data)
-		self.cartSubs = self.create_subscription(CurCartesian, f'/{namespace}/cur_cartesian', self.cartListener, qos_profile_sensor_data)
-		self.jointSubs = self.create_subscription(CurJoints, f'/{namespace}/cur_joints', self.jointListener, qos_profile_sensor_data)
+		#self.gripperSubs = self.create_subscription(CurGripper, f'/{namespace}/grip_status', self.gripListener, qos_profile_sensor_data)
+		#self.cartSubs = self.create_subscription(CurCartesian, f'/{namespace}/cur_cartesian', self.cartListener, qos_profile_sensor_data)
+		#self.jointSubs = self.create_subscription(CurJoints, f'/{namespace}/cur_joints', self.jointListener, qos_profile_sensor_data)
 		self.convSubs = self.create_subscription(ProxReadings, f'/{namespace}/prox_readings', self.convListener, qos_profile_sensor_data)
-		self.moveSubs = self.create_subscription(IsMoving, f'/{namespace}/is_moving', self.moveListener, qos_profile_sensor_data)
+		#self.moveSubs = self.create_subscription(IsMoving, f'/{namespace}/is_moving', self.moveListener, qos_profile_sensor_data)
 
 		# This will hold the current value from the Fanuc topic
 		self.curValue = False # Temporary default value
@@ -93,50 +93,12 @@ class FanucTopic(Node):
 	def moveListener(self, msg):
 		self.isMoving = msg.moving
 		
-	def service_callback(self, request, response):
+	'''def service_callback(self, request, response):
 		"""
 		This will run when we send a service request
 		"""
 		response.message = str(self.curValue)
-		return response
-	
-	def ready_status_callback(self, msg):
-		"""
-		The other nodes don't have this function, yet. 
-		I think they will need it in order to do their own wait_for_all_ready operations.
-		"""
-		# Update the latest ready statuses with the message received from the 'robot_ready_status' topic
-
-		# DEBUGGING
-		print("DEBUG: Start of RoombaNode callback...")
-		print("msg.roomba_base2 : 	", msg.roomba_base2)
-		print("msg.beaker : 	", msg.beaker)
-		print("msg.beaker_conv:",msg.beaker_conv)
-		print("msg.bunsen_conv:",msg.bunsen_conv)
-		print("msg.bunsen : 	", msg.bunsen)
-		print("msg.roomba_base3 : 	", msg.roomba_base3)
-		print("End of RoombaNode callback \n")
-
-		self.latest_ready_status = msg
-		statuses = [None,None,None,None,None,None]
-		statuses[0] = msg.roomba_base2
-		statuses[1] = msg.beaker
-		statuses[2] = msg.beaker_conv
-		statuses[3] = msg.bunsen_conv
-		statuses[4] = msg.bunsen
-		statuses[5] = msg.roomba_base3
-
-		statuses = [
-            str(msg.roomba_base2),
-            str(msg.beaker),
-            str(msg.beaker_conv),
-            str(msg.bunsen_conv),
-            str(msg.bunsen),
-            str(msg.roomba_base3),
-        ]
-
-		with open(self.status_file_path, 'w') as file:
-			file.write(','.join(statuses) + '\n')
+		return response'''
 
 
 # 'Main' node
@@ -159,11 +121,11 @@ class FanucActions(Node):
 		self.conv_ac = ActionClient(self, Conveyor, f'/{namespace}/conveyor')
 		
 		# Sercice Client
-		self.gripService = self.create_client(Trigger,'/check_gripper')
+		'''self.gripService = self.create_client(Trigger,'/check_gripper')
 		self.cartService = self.create_client(Trigger,'/check_cartesian')
 		self.jointService = self.create_client(Trigger,'/check_joint')
 		self.convService = self.create_client(Trigger,'/check_conveyor')
-		self.moveService = self.create_client(Trigger,'/check_moving')
+		self.moveService = self.create_client(Trigger,'/check_moving')'''
 		
 	def reportSender(self):
 		""""
@@ -217,7 +179,7 @@ class FanucActions(Node):
 			"date": str(datetime.now())
 		}
 	
-		mqttc.publish(topic, json.dumps(data))
+		#mqttc.publish(topic, json.dumps(data))
 		
 		
 	def cartMove(self, x, y, z, w, p, r):
@@ -292,8 +254,8 @@ class FanucActions(Node):
 		self.cartMove(302.556, -539.279, -83.733, -179.284, -2.058, -120.535)           # Avoid table
 		self.cartMove(618.352, 1.623, -83.733, -179.284, -2.058, -59.679)               # Home
 		
-		while not brokerSender.start_all_message:                                      # Wait for start signal
-			pass
+		# while not brokerSender.start_all_message:                                      # Wait for start signal
+		# 	pass
 
 		self.topicNode.label = "Picking up dice block at base 2"
 
@@ -372,18 +334,18 @@ class FanucActions(Node):
 		self.cartMove(568.058, -75.22, 19.527, -179.637, 1.597, 29.106)                 # Home
 		self.schunkMove('open')
 
-		while not brokerSender.start_all_message:                                       # Wait for start signal
-			pass
+		# while not brokerSender.start_all_message:                                       # Wait for start signal
+		# 	pass
 
 		self.topicNode.label = "Picking up dice block at conveyor 1"
 
 		self.cartMove(75.396, -831.926, -151.291, -178.373, -0.332, 26.7)               # Conveyor 1 approach end
 		
 		self.get_logger().info("Setting bunsen_conv's status to True...")
-		self.beaker_status_client.update_robot_status('bunsen_conv', True)         		# Ready at conveyor 1
+		self.bunsen_status_client.update_robot_status('bunsen_conv', True)         		# Ready at conveyor 1
 
 		self.get_logger().info("Waiting for beaker_conv status to become False...")
-		self.beaker_status_client.wait_for_specific_status('beaker_conv', True)         # Wait for ready at conveyor 1
+		self.bunsen_status_client.wait_for_specific_status('beaker_conv', True)         # Wait for ready at conveyor 1
 
 		self.cartMove(75.396, -831.926, -196.291, -178.373, -0.332, 26.7)               # Conveyor 1 pickup end
 
@@ -465,21 +427,23 @@ class FanucActions(Node):
 		while self.topicNode.beltSensorRear == False:
 			if time.time()- timeStart > 10:
 				self.topicNode.fault = "No dice block detected on conveyor"
+				print("No dice block detected on conveyor")
 				self.reportSender()
 				break
+			pass
 		self.convMove('stop')
 
 	def test(self):
 		#self.convMove('forward')
 		#self.schunkMove('open')
 		#self.cartMove(618.352, 1.623, -83.733, -179.284, -2.058, -59.679)
-		sleep(2)
+		#sleep(2)
 		#self.convMove('stop')
 		#self.schunkMove('close')
 
 		#self.reportSender()
 		#if beltSensorFront == True:
-		#self.convMoveBlock()
+		self.convMoveBlock()
 		#self.nodeBeaker.check_roomba_base2()
 		#self.cartMove(79.57, -577.628, -92.912, -179.983, 0.628, 26.238)
 		#self.jointMove(-64.732, 20.007, -51.662, 3.396, -43.347, 90.833)
@@ -495,13 +459,13 @@ def stop_all(exec,robot,rclpy):
 
 if __name__ == '__main__':
 	rclpy.init()
-	# Create our 2 nodes
+	# Create our 6 nodes
 	beaker_status_client = RobotClientNode('beaker')
 	bunsen_status_client = RobotClientNode('bunsen')
-	mainBeaker = FanucActions('beaker')
 	listenerBeaker = FanucTopic('beaker')
-	mainBunsen = FanucActions('bunsen')
 	listenerBunsen = FanucTopic('bunsen')
+	mainBeaker = FanucActions('beaker')
+	mainBunsen = FanucActions('bunsen')
 
 	exec = MultiThreadedExecutor(7)
 

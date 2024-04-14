@@ -93,7 +93,7 @@ class RobotClientNode(Node):
 			time.sleep(1)  # Throttle the requests to avoid spamming
 
 
-'''
+
 	######################################################
 	""" TESTING STUFF """
 	######################################################
@@ -206,4 +206,4 @@ if __name__ == '__main__':
 	finally:
 		exec.shutdown()
 		tester_client_node.destroy_node()
-		rclpy.shutdown()'''
+		rclpy.shutdown()
