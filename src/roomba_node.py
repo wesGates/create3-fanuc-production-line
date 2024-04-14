@@ -135,6 +135,14 @@ class RoombaInfo(Node):
 		except Exception as e:
 			self.get_logger().error(f"Failed to handle IrOpcode message: {e}")
 
+	############################ 04/14
+	def check_dock_status(self):
+		return self.dock_sensor.publish_dock_status()  # Assuming this method returns the status
+
+	def update_dock_status(self):
+		self.dock_sensor.publish_dock_status()
+
+
 class Roomba(Node):
 	def __init__(self, namespace, roomba_info):
 		super().__init__('roomba_node')
@@ -222,21 +230,33 @@ class Roomba(Node):
 
 
 	##### Methods for movements #####
-	def undock(self):
-		# print("Sending report... \n")
-		# self.reportSender("undock", isMoving=True)
-		self.chirp(start_note)
+	# def undock(self):
+	# 	# print("Sending report... \n")
+	# 	# self.reportSender("undock", isMoving=True)
+	# 	self.chirp(start_note)
 
-		# Read current dock status, then undock
-		self.dock_sensor.publish_dock_status() # Tells the publisher to update the dock status
-		self.undock_ac.wait_for_server() # Wait till its ready
-		undock_goal = Undock.Goal() # Make goal
-		self.undock_ac.send_goal(undock_goal) # Send goal blocking
+	# 	# Read current dock status, then undock
+	# 	self.dock_sensor.publish_dock_status() # Tells the publisher to update the dock status
+	# 	self.undock_ac.wait_for_server() # Wait till its ready
+	# 	undock_goal = Undock.Goal() # Make goal
+	# 	self.undock_ac.send_goal(undock_goal) # Send goal blocking
 		
-		self.dock_sensor.publish_dock_status() # Tells the publisher to update the dock status
-		time.sleep(1)
+	# 	self.dock_sensor.publish_dock_status() # Tells the publisher to update the dock status
+	# 	time.sleep(1)
 
-		# print("Report sent \n")
+	# 	# print("Report sent \n")
+	# 	self.chirp(end_note)
+
+	def undock(self):
+		self.chirp(start_note)
+		# Use RoombaInfo's method to update dock status
+		self.roomba_info.update_dock_status()
+		self.undock_ac.wait_for_server()
+		undock_goal = Undock.Goal()
+		self.undock_ac.send_goal(undock_goal)
+		# Again, use RoombaInfo's method
+		self.roomba_info.update_dock_status()
+		time.sleep(1)
 		self.chirp(end_note)
 
 
