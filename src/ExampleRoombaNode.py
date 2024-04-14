@@ -107,7 +107,7 @@ class RoombaNode(Node):
 
 			# Step 1-2: Wait for beaker to become True, indicating it's in position for the dice pickup
 			self.get_logger().info("Waiting for beaker status to become True")
-			self.roomba_status_client.update_robot_status('beaker', True)
+			self.roomba_status_client.wait_for_specific_status('beaker', True)
 
 			# Step 1-3: Wait for beaker to become False, indicating beaker has the dice block and has moved away
 			self.get_logger().info("Waiting for beaker status to become False...")
@@ -118,6 +118,8 @@ class RoombaNode(Node):
 			self.get_logger().info("Setting roomba_base2 status to False...")
 			self.roomba_status_client.update_robot_status('roomba_base2', False)
 		
+			# Undock
+
 			# Move to base3 at bunsen
 
 			# Step 2-1: After docking, wait for bunsen to become True before setting roomba_base3 to true

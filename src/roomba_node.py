@@ -486,23 +486,34 @@ class Roomba(Node):
 			self.rotate_amnt(pi/5)
 			self.reportSender(roomba_label_1, action="rotate_done", isMoving=True)
 			############################
-   
 
 			# dock
 			self.reportSender(roomba_label_1, action="dock_start", isMoving=True)
 			self.dock()
-			self.reportSender(roomba_label_1, action="dock_done", isMoving=False, isAtBase2=True)
-			time.sleep(3)  
-			
+			self.reportSender(roomba_label_1, action="dock_done", isMoving=False, isAtBase2=True)			
 
-			# Wait for beaker to be ready before proceeding
-			roomba_statuses.check_base2()
 
-			# Wait for beaker to get the block
-			roomba_statuses.check_dice_block_handoff_base2()
+			# AFTER DOCKING AT BASE2
+			#####################################################################
+			# Step 1-1: Set the status of roomba_base2 to True after docking
+			self.get_logger().info("Setting roomba_base2 status to True...")
+			self.roomba_status_client.update_robot_status('roomba_base2', True)
 
-			roomba_statuses.set_roomba_base2_false()
-			
+			# Step 1-2: Wait for beaker to become True, indicating it's in position for the dice pickup
+			self.get_logger().info("Waiting for beaker status to become True")
+			self.roomba_status_client.wait_for_specific_status('beaker', True)
+
+			# Step 1-3: Wait for beaker to become False, indicating beaker has the dice block and has moved away
+			self.get_logger().info("Waiting for beaker status to become False...")
+			self.roomba_status_client.wait_for_specific_status('beaker', False)
+			self.get_logger().info("beaker status is now False.")
+
+			# Step 1-4: Set roomba_base2 status to False
+			self.get_logger().info("Setting roomba_base2 status to False...")
+			self.roomba_status_client.update_robot_status('roomba_base2', False)
+			#####################################################################
+
+
 
 			### Actions for process 2: Navigating to base3 from base2 ###
 			self.reportSender(roomba_label_2, action="undock_start", isAtBase2=True, isMoving=False)
@@ -544,16 +555,35 @@ class Roomba(Node):
 			self.dock()
 			self.reportSender(roomba_label_2, action="dock_done", isMoving=False, isAtBase3=True)
 
-			## !!! Logic for communicating ready statuses goes here
-			roomba_statuses.check_base3()
-			roomba_statuses.check_dice_block_handoff_base3()
-			roomba_statuses.set_roomba_base3_false()
+			# ## !!! Logic for communicating ready statuses goes here
+			# roomba_statuses.check_base3()
+			# roomba_statuses.check_dice_block_handoff_base3()
+			# roomba_statuses.set_roomba_base3_false()
 
+			# AFTER DOCKING AT BASE3
+			#####################################################################
+			# Step 2-1: After docking, wait for bunsen to become True before setting roomba_base3 to true
+			self.get_logger().info("Waiting for bunsen status to become True...")
+			self.roomba_status_client.wait_for_specific_status('bunsen', True)
+			self.get_logger().info("bunsen status is now True.")
 
+			# Step 2-2: Tell bunsen that the dice block can be delivered
+			self.get_logger().info("Setting roomba_base3 status to True...")
+			self.roomba_status_client.update_robot_status('roomba_base3', True)
+
+			# Step 2-3: Wait for bunsen to indicate that the dice block was delivered, and has moved away
+			self.get_logger().info("Waiting for bunsen status to become False...")
+			self.roomba_status_client.wait_for_specific_status('bunsen', False)
+			self.get_logger().info("bunsen status is now False.")
+
+			# Step 2-4: Reset roomba_base3 to False
+			self.get_logger().info("Setting roomba_base3 status to False...")
+			self.roomba_status_client.update_robot_status('roomba_base3', False)
 			### Actions for process 3: Navigating to base1 from base3 ###
 			self.reportSender(roomba_label_3, action="undock_start", isAtBase3=True, isMoving=False)
 			self.undock()
 			self.reportSender(roomba_label_3, action="undock_done", isAtBase3=False, isMoving=True)
+			#####################################################################
 
 			# drive amount
 			self.reportSender(roomba_label_3, action="drive_start", isMoving=True)
@@ -595,39 +625,6 @@ class Roomba(Node):
 			self.get_logger().error(f"Error in takeoff: {error}")
 
 
-	def test(self):
-		" Uses an instance of the RobotClientNode to change statuses and wait for other statuses"
-		try:
-			# Step 1: Set the status of roomba_base2 to True and wait for it to be confirmed
-			self.get_logger().info("Setting roomba_base2 status to True...")
-			self.roomba_status_client.update_robot_status('roomba_base2', True)
-			self.roomba_status_client.wait_for_specific_status('roomba_base2', True)
-			self.get_logger().info("roomba_base2 status set to True confirmed.")
-
-			# Step 2: Wait for beaker to become False
-			self.get_logger().info("Waiting for beaker status to become False...")
-			self.roomba_status_client.wait_for_specific_status('beaker', False)
-			self.get_logger().info("beaker status is now False.")
-
-			# Step 3: Set roomba_base2 status to False
-			self.get_logger().info("Setting roomba_base2 status to False...")
-			self.roomba_status_client.update_robot_status('roomba_base2', False)
-			self.roomba_status_client.wait_for_specific_status('roomba_base2', False)
-			self.get_logger().info("roomba_base2 status set to False confirmed.")
-
-			# Step 4: Set roomba_base3 status to True and wait for it to be confirmed
-			self.get_logger().info("Setting roomba_base3 status to True...")
-			self.roomba_status_client.update_robot_status('roomba_base3', True)
-			self.roomba_status_client.wait_for_specific_status('roomba_base3', True)
-			self.get_logger().info("roomba_base3 status set to True confirmed.")
-
-			# Step 5: Wait for bunsen to become True
-			self.get_logger().info("Waiting for bunsen status to become True...")
-			self.roomba_status_client.wait_for_specific_status('bunsen', True)
-			self.get_logger().info("bunsen status is now True.")
-
-			# Step 6: Print statement indicating the transition
-			self.get_logger().info("Traveling from base 3 to base 1.")
 
 		except Exception as error:
 			roomba.chirp(error_notes)  # Assuming `chirp` is a method to indicate errors audibly
