@@ -669,7 +669,7 @@ if __name__ == '__main__':
 	exec = MultiThreadedExecutor(8)
 
 	exec.add_node(roomba)
-	exec.add_node(roomba_topic)
+	exec.add_node(info)
 
 	exec.add_node(dock_sensor)
 	exec.add_node(ir_sensor)
