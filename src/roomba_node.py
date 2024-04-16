@@ -107,7 +107,7 @@ class RoombaInfo(Node):
 												self.dock_status_callback, 10)
 
 		self.current_pose_sub_ = self.create_subscription(PoseStamped, f'/{namespace}/pose_stamped', 
-												self.pose_callback, qos_profile_sensor_data, callback_group=cb_pose)
+												self.pose_callback, qos_profile_sensor_data)
 
 		# Services:
 		self.reset_pose_srv = self.create_client(ResetPose, f'/{namespace}/reset_pose')
