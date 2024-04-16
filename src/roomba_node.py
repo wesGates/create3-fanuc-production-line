@@ -91,10 +91,9 @@ topic = "vandalrobot"
 
 
 class RoombaInfo(Node):
-	def __init__(self, namespace, roomba_status_client, robot_state, dock_sensor, odometry_sensor):
+	def __init__(self, namespace, roomba_status_client, dock_sensor, odometry_sensor):
 		super().__init__('roomba_info_node')
 		self.roomba_status_client = roomba_status_client
-		# self.robot_state = robot_state
 		self.dock_sensor = dock_sensor
 		self.odometry_sensor = odometry_sensor
 
@@ -118,7 +117,6 @@ class RoombaInfo(Node):
 
 	def dock_status_callback(self, msg):
 		"""Update the internal RobotState with the latest dock status."""
-		# self.robot_state.update_dock_status(msg.data)
 		self.latest_dock_status = msg
 		self.get_logger().info(f"Received /is_docked status: {self.latest_dock_status}")
 
@@ -126,11 +124,20 @@ class RoombaInfo(Node):
 	def pose_callback(self, msg):
 		"""Update the internal RobotState with the latest pose."""
 		self.latest_pose_stamped = msg # NavigateToPosition action needs the whole PoseStamped msg
-		self.get_logger().info(f"Received stamped pose status: {self.latest_pose_stamped}")
+		# self.get_logger().info(f"Received stamped pose status: {self.latest_pose_stamped}")
 
 
 	def request_odometry_update(self):
 		self.odometry_sensor.publish_odometry()
+
+	def request_dock_update(self):
+		self.dock_sensor.publish_dock_status()
+
+	def get_dock_status(self):
+		return self.latest_dock_status
+
+	def get_pose_stamped(self):
+		return self.latest_pose_stamped
 
 
 	def reset_pose(self):
@@ -151,17 +158,11 @@ class RoombaInfo(Node):
 		
 
 
-	def get_dock_status(self):
-		return self.latest_dock_status
-
-	def get_pose_stamped(self):
-		return self.latest_pose_stamped
-
 class Roomba(Node):
-	def __init__(self, namespace, roomba_info, robot_state):
+	def __init__(self, namespace, roomba_info):
 		super().__init__('roomba_node')
 		self.roomba_info = roomba_info
-		self.robot_state = robot_state
+
 
 		# Action clients:
 		self.dock_ac = ActionClient(self, Dock, f'/{namespace}/dock')
@@ -190,7 +191,7 @@ class Roomba(Node):
 			"nodeId": "gatesroomba12",
 			"productLine": "moscow",
 			"roombareport": {
-				"isDock": robot_state.latest_dock_status,
+				"isDock": str(roomba_info.latest_dock_status),
 				"action": action,
 				"label":label,
 				"isReady": isReady,
@@ -201,9 +202,9 @@ class Roomba(Node):
 				"isMoving": isMoving,
 				"position": [
 
-							int(robot_state.latest_pose_stamped.pose.position.x*1000),
-							int(robot_state.latest_pose_stamped.pose.position.y*1000),
-							int(robot_state.latest_pose_stamped.pose.position.z*1000)],
+							int(roomba_info.latest_pose_stamped.pose.position.x*1000),
+							int(roomba_info.latest_pose_stamped.pose.position.y*1000),
+							int(roomba_info.latest_pose_stamped.pose.position.z*1000)],
 
 				"Fault": {
 				}
@@ -247,6 +248,10 @@ class Roomba(Node):
 		# Play a starting sound to indicate beginning of undocking
 		self.chirp(start_note)
 
+		roomba_info.request_dock_update()
+		curr_dock_status = roomba_info.get_dock_status()
+		print("Current dock status: ", curr_dock_status)
+
 		# Wait for the action server to be ready
 		self.undock_ac.wait_for_server()
 
@@ -261,7 +266,7 @@ class Roomba(Node):
 		if future.result() is not None:
 			self.get_logger().info('Undocking successful.')
 			# Update dock status via RoombaInfo after undocking
-			self.robot_state.update_dock_status(False)  # Assuming update_dock_status now accepts a boolean
+			# self.roomba_info.request_dock_update()
 		else:
 			self.get_logger().error('Failed to undock.')
 
@@ -294,13 +299,15 @@ class Roomba(Node):
 		Request an odometry update, then record the latest pose.
 		"""
 		# Trigger the odometry update
-		self.roomba_info.request_odometry_update()
+		roomba_info.request_odometry_update()
 
 		# Wait for a short period to allow data to be published and processed
 		time.sleep(1)  # Adjust timing based on system responsiveness
 
 		# Fetch the updated pose
-		current_pose = self.roomba_info.robot_state.get_pose_stamped()
+		# print("1")
+		current_pose = roomba_info.latest_pose_stamped
+		# print("2")
 
 		if current_pose and current_pose.pose:
 			self.recorded_pose = current_pose
@@ -312,9 +319,6 @@ class Roomba(Node):
 	def drive_amnt(self, distance):
 		print("Driving amount:", distance, "m")
 
-		# print("Sending report... \n")
-		# self.reportSender("undock", isMoving=True)
-
 		self.chirp(start_note)
 		self.drive_ac.wait_for_server()
 		drive_goal = DriveDistance.Goal()
@@ -323,8 +327,6 @@ class Roomba(Node):
 		
 		time.sleep(1)  # Consider using async
 
-		# print("Report sent \n")
-		# self.reportSender("undock_done")
 		self.chirp(end_note)
 
 
@@ -424,7 +426,7 @@ class Roomba(Node):
 			self.reportSender(label=roomba_label_1, action="undock_start", isAtBase1=True, isMoving=False)
 			self.undock()
 			self.reportSender(roomba_label_1, action="undock_done", isAtBase1=False, isMoving=True)
-			self.roomba_info.reset_pose()
+			# self.roomba_info.reset_pose()
 
 			# rotate amount
 			self.reportSender(roomba_label_1, action="rotate_start", isMoving=True)
@@ -607,15 +609,14 @@ if __name__ == '__main__':
 	namespace = 'create3_05AE'
 	
 	# Initialize RobotState first
-	robot_state = RobotState()
 
 	dock_sensor = DockStatusMonitorNode(namespace)
 	odometry_sensor = OdomNode(namespace)
 	roomba_status_client = RobotClientNode(namespace)
 
-	roomba_info = RoombaInfo(namespace, roomba_status_client, robot_state, dock_sensor, odometry_sensor)
+	roomba_info = RoombaInfo(namespace, roomba_status_client, dock_sensor, odometry_sensor)
 	
-	roomba = Roomba(namespace, roomba_info, robot_state)
+	roomba = Roomba(namespace, roomba_info)
 
 	exec = MultiThreadedExecutor(6) # Acer laptop and Surface have 8 threads
 	exec.add_node(dock_sensor) # 1
