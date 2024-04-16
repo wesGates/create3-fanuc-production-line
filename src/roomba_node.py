@@ -66,29 +66,27 @@ error_notes = [
 topic = "vandalrobot"
 
 
-class RobotState:
-	def __init__(self):
-		""" This class handles the internal robot state of the Roomba (Create3) robot. """
-		self.latest_dock_status = False
-		self.latest_pose_stamped = PoseStamped()
-		self.latest_ir_opcode = None
-		self.ir_opcode_history = deque(maxlen=20)
+# class RobotState:
+# 	def __init__(self):
+# 		""" This class handles the internal robot state of the Roomba (Create3) robot. """
+# 		self.latest_dock_status = False
+# 		self.latest_pose_stamped = PoseStamped()
 
-	def update_dock_status(self, status):
-		self.latest_dock_status = status
+# 	def update_dock_status(self, status):
+# 		self.latest_dock_status = status
 
-	def update_pose_stamped(self, pose):
-		self.latest_pose_stamped = pose
+# 	def update_pose_stamped(self, pose):
+# 		self.latest_pose_stamped = pose
 
-	def update_ir_opcode(self, opcode):
-		self.latest_ir_opcode = opcode
-		self.ir_opcode_history.append(opcode)
+# 	def update_ir_opcode(self, opcode):
+# 		self.latest_ir_opcode = opcode
+# 		self.ir_opcode_history.append(opcode)
 
-	def get_dock_status(self):
-		return self.latest_dock_status
+# 	def get_dock_status(self):
+# 		return self.latest_dock_status
 
-	def get_pose_stamped(self):
-		return self.latest_pose_stamped
+# 	def get_pose_stamped(self):
+# 		return self.latest_pose_stamped
 
 
 
@@ -96,9 +94,14 @@ class RoombaInfo(Node):
 	def __init__(self, namespace, roomba_status_client, robot_state, dock_sensor, odometry_sensor):
 		super().__init__('roomba_info_node')
 		self.roomba_status_client = roomba_status_client
-		self.robot_state = robot_state
+		# self.robot_state = robot_state
 		self.dock_sensor = dock_sensor
 		self.odometry_sensor = odometry_sensor
+
+		self.latest_dock_status = False
+		self.latest_pose_stamped = PoseStamped()
+
+
 
 		# Subscriptions: 
 		self.dock_status_sub_ = self.create_subscription(Bool, f'/{namespace}/check_dock_status', 
@@ -115,14 +118,15 @@ class RoombaInfo(Node):
 
 	def dock_status_callback(self, msg):
 		"""Update the internal RobotState with the latest dock status."""
-		self.robot_state.update_dock_status(msg.data)
-		self.get_logger().info(f"Received /is_docked status: {self.robot_state.get_dock_status()}")
+		# self.robot_state.update_dock_status(msg.data)
+		self.latest_dock_status = msg
+		self.get_logger().info(f"Received /is_docked status: {self.latest_dock_status}")
 
 
 	def pose_callback(self, msg):
 		"""Update the internal RobotState with the latest pose."""
-		self.robot_state.update_pose_stamped(msg) # NavigateToPosition action needs the whole PoseStamped msg
-		self.get_logger().info(f"Received stamped pose status: {self.robot_state.get_pose_stamped()}")
+		self.latest_pose_stamped = msg # NavigateToPosition action needs the whole PoseStamped msg
+		self.get_logger().info(f"Received stamped pose status: {self.latest_pose_stamped}")
 
 
 	def request_odometry_update(self):
@@ -146,8 +150,12 @@ class RoombaInfo(Node):
 			return False
 		
 
-	
 
+	def get_dock_status(self):
+		return self.latest_dock_status
+
+	def get_pose_stamped(self):
+		return self.latest_pose_stamped
 
 class Roomba(Node):
 	def __init__(self, namespace, roomba_info, robot_state):
@@ -182,7 +190,7 @@ class Roomba(Node):
 			"nodeId": "gatesroomba12",
 			"productLine": "moscow",
 			"roombareport": {
-				"isDock": self.latest_dock_status,
+				"isDock": robot_state.latest_dock_status,
 				"action": action,
 				"label":label,
 				"isReady": isReady,
@@ -193,9 +201,9 @@ class Roomba(Node):
 				"isMoving": isMoving,
 				"position": [
 
-							int(self.latest_pose_stamped.pose.position.x*1000),
-							int(self.latest_pose_stamped.pose.position.y*1000),
-							int(self.latest_pose_stamped.pose.position.z*1000)],
+							int(robot_state.latest_pose_stamped.pose.position.x*1000),
+							int(robot_state.latest_pose_stamped.pose.position.y*1000),
+							int(robot_state.latest_pose_stamped.pose.position.z*1000)],
 
 				"Fault": {
 				}
@@ -223,13 +231,13 @@ class Roomba(Node):
 	##### Methods for movements #####
 	# def undock(self):
 	# 	self.chirp(start_note)
-	# 	# Use RoombaInfo's method to update dock status
-	# 	self.roomba_info.update_dock_status()
+	# 	# # Use RoombaInfo's method to update dock status
+	# 	# self.roomba_info.update_dock_status(False)
 	# 	self.undock_ac.wait_for_server()
 	# 	undock_goal = Undock.Goal()
 	# 	self.undock_ac.send_goal(undock_goal)
-	# 	# Again, use RoombaInfo's method
-	# 	self.roomba_info.update_dock_status()
+	# 	# # Again, use RoombaInfo's method
+	# 	# self.roomba_info.update_dock_status(False)
 	# 	time.sleep(1)
 	# 	self.chirp(end_note)
 
@@ -253,7 +261,7 @@ class Roomba(Node):
 		if future.result() is not None:
 			self.get_logger().info('Undocking successful.')
 			# Update dock status via RoombaInfo after undocking
-			self.roomba_info.update_dock_status(False)  # Assuming update_dock_status now accepts a boolean
+			self.robot_state.update_dock_status(False)  # Assuming update_dock_status now accepts a boolean
 		else:
 			self.get_logger().error('Failed to undock.')
 
@@ -262,21 +270,41 @@ class Roomba(Node):
 		self.chirp(end_note)
 
 
+	# def record_pose(self):
+	# 	"""
+	# 	Store the current pose for future use.
+	# 	"""
+	# 	odometry_sensor.publish_odometry()
+	# 	time.sleep(1) # Provides enough time to avoid errors, apparently
+	# 	if self.latest_pose_stamped is not None:
+	# 		self.recorded_pose = self.latest_pose_stamped
+	# 		self.get_logger().info("PoseStamped recorded:\n")
+			
+	# 		# DEBUG: Check the coordinates
+	# 		# print(int(self.latest_pose_stamped.pose.position.x*1000))
+	# 		# print("\n", int(self.latest_pose_stamped.pose.position.y*1000))
+	# 		# print("\n", int(self.latest_pose_stamped.pose.position.z*1000))
+
+	# 	else:
+	# 		self.get_logger().error("No current pose available to record.")
+
+
 	def record_pose(self):
 		"""
-		Store the current pose for future use.
+		Request an odometry update, then record the latest pose.
 		"""
-		odometry_sensor.publish_odometry()
-		time.sleep(1) # Provides enough time to avoid errors, apparently
-		if self.latest_pose_stamped is not None:
-			self.recorded_pose = self.latest_pose_stamped
-			self.get_logger().info("PoseStamped recorded:\n")
-			
-			# DEBUG: Check the coordinates
-			# print(int(self.latest_pose_stamped.pose.position.x*1000))
-			# print("\n", int(self.latest_pose_stamped.pose.position.y*1000))
-			# print("\n", int(self.latest_pose_stamped.pose.position.z*1000))
+		# Trigger the odometry update
+		self.roomba_info.request_odometry_update()
 
+		# Wait for a short period to allow data to be published and processed
+		time.sleep(1)  # Adjust timing based on system responsiveness
+
+		# Fetch the updated pose
+		current_pose = self.roomba_info.robot_state.get_pose_stamped()
+
+		if current_pose and current_pose.pose:
+			self.recorded_pose = current_pose
+			self.get_logger().info(f"PoseStamped recorded: X={current_pose.pose.position.x}, Y={current_pose.pose.position.y}")
 		else:
 			self.get_logger().error("No current pose available to record.")
 
@@ -585,15 +613,15 @@ if __name__ == '__main__':
 	odometry_sensor = OdomNode(namespace)
 	roomba_status_client = RobotClientNode(namespace)
 
-	info = RoombaInfo(namespace, roomba_status_client, robot_state, dock_sensor, odometry_sensor)
+	roomba_info = RoombaInfo(namespace, roomba_status_client, robot_state, dock_sensor, odometry_sensor)
 	
-	roomba = Roomba(namespace, info)
+	roomba = Roomba(namespace, roomba_info, robot_state)
 
 	exec = MultiThreadedExecutor(6) # Acer laptop and Surface have 8 threads
 	exec.add_node(dock_sensor) # 1
 	exec.add_node(odometry_sensor) # 1
 	exec.add_node(roomba_status_client) # 1
-	exec.add_node(info) # 2 (one for each service in the roomba_status_client)
+	exec.add_node(roomba_info) # 2 (one for each service in the roomba_status_client)
 	exec.add_node(roomba) # 1 
 
 	# time.sleep(0.1)
@@ -623,12 +651,11 @@ if __name__ == '__main__':
 		print(f"Unexpected error: {error}")
 	finally:
 		exec.shutdown()
-		info.destroy_node()
+		roomba_info.destroy_node()
 		roomba.destroy_node()
 		dock_sensor.destroy_node()
-		ir_sensor.destroy_node()
 		odometry_sensor.destroy_node()
 		roomba_status_client.destroy_node()
-		rclpy.shutdown()
+		rclpy.try_shutdown()
 
 
