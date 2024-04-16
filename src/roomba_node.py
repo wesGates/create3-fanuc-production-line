@@ -64,24 +64,42 @@ error_notes = [
 ]
 
 topic = "vandalrobot"
-# namespace = 'create3_05AE'
 
-# # Initialize and connect to other nodes
-# rclpy.init()
-# dock_sensor = DockStatusMonitorNode(namespace)
-# ir_sensor = IrMonitorNode(namespace)
-# odometry_sensor = OdomNode(namespace)
-# roomba_status_client = RobotClientNode(namespace)
+
+class RobotState:
+	def __init__(self):
+		""" This class handles the internal robot state of the Roomba (Create3) robot. """
+		self.latest_dock_status = False
+		self.latest_pose_stamped = PoseStamped()
+		self.latest_ir_opcode = None
+		self.ir_opcode_history = deque(maxlen=20)
+
+	def update_dock_status(self, status):
+		self.latest_dock_status = status
+
+	def update_pose_stamped(self, pose):
+		self.latest_pose_stamped = pose
+
+	def update_ir_opcode(self, opcode):
+		self.latest_ir_opcode = opcode
+		self.ir_opcode_history.append(opcode)
+
+	def get_dock_status(self):
+		return self.latest_dock_status
+
+	def get_pose_stamped(self):
+		return self.latest_pose_stamped
+
+	def get_ir_opcode(self):
+		return self.latest_ir_opcode
 
 
 
 class RoombaInfo(Node):
-	def __init__(self, namespace, dock_sensor, ir_sensor, odometry_sensor, roomba_status_client):
+	def __init__(self, namespace, roomba_status_client, robot_state):
 		super().__init__('roomba_info_node')
-		self.dock_sensor = dock_sensor
-		self.ir_sensor = ir_sensor
-		self.odometry_sensor = odometry_sensor
 		self.roomba_status_client = roomba_status_client
+		self.robot_state = robot_state
 
 
 		# Subscriptions: 
@@ -102,53 +120,53 @@ class RoombaInfo(Node):
 
 
 		# Services:
-		# ResetPose service client and initialize PoseStamped variable for position reset using odometry
 		self.reset_pose_srv = self.create_client(ResetPose, f'/{namespace}/reset_pose')
-		
-		# Ensure service is available
 		while not self.reset_pose_srv.wait_for_service(timeout_sec=1.0):
 			self.get_logger().info('ResetPose service not available, waiting again...')
 
 
-		# Variable Initialization
-		self.latest_dock_status = True
-		self.latest_pose_stamped = None
-		self.latest_ir_opcode = None
-		self.latest_pose_stamped = PoseStamped()
-		self.ir_opcode_history = deque(maxlen=20)  # A deque to store the history of opcodes in the auto-docking function
-
-
 	def dock_status_callback(self, msg):
-		self.latest_dock_status = msg.data
-		self.get_logger().info(f"Received /is_docked status: {self.latest_dock_status}")
-
+		"""Update the internal RobotState with the latest dock status."""
+		self.robot_state.update_dock_status(msg.data)
+		self.get_logger().info(f"Received /is_docked status: {self.robot_state.get_dock_status()}")
 
 	def pose_callback(self, msg):
-		self.latest_pose_stamped = msg # NavToPosition needs the whole thang
-		self.get_logger().info(f"Received stamped pose status: {self.latest_pose_stamped}")
-
+		"""Update the internal RobotState with the latest pose."""
+		self.robot_state.update_pose_stamped(msg) # NavigateToPosition action needs the whole PoseStamped msg
+		self.get_logger().info(f"Received stamped pose status: {self.robot_state.get_pose_stamped()}")
 
 	def ir_opcode_callback(self, msg):
+		"""Update the internal RobotState with the latest IR opcode."""
 		try:
-			self.latest_ir_opcode = msg.data
-			self.get_logger().info(f"Received IrOpcode: {self.latest_ir_opcode}")
+			self.robot_state.update_ir_opcode(msg.data)
+			self.get_logger().info(f"Received IrOpcode: {self.robot_state.get_ir_opcode()}")
 		except Exception as e:
 			self.get_logger().error(f"Failed to handle IrOpcode message: {e}")
 
-	############################ 04/14
-	def check_dock_status(self):
-		return self.dock_sensor.publish_dock_status()  # Assuming this method returns the status
-
-	def update_dock_status(self):
-		self.dock_sensor.publish_dock_status()
+	def reset_pose(self):
+		"""Public method to reset the robot's pose estimate."""
+		try:
+			request = ResetPose.Request()
+			future = self.reset_pose_srv.call_async(request)
+			rclpy.spin_until_future_complete(self, future)
+			if future.result() is not None:
+				self.get_logger().info('ResetPose service called successfully.')
+				return True
+			else:
+				self.get_logger().error('No response from ResetPose service.')
+				return False
+		except Exception as e:
+			self.get_logger().error(f'Failed to call ResetPose service: {e}')
+			return False
 
 
 class Roomba(Node):
-	def __init__(self, namespace, roomba_info):
+	def __init__(self, namespace, roomba_info, robot_state):
 		super().__init__('roomba_node')
 		self.roomba_info = roomba_info
+		self.robot_state = robot_state
 
-		# Actions:
+		# Action clients:
 		cb_Action = MutuallyExclusiveCallbackGroup()
 		cb_chirp  = MutuallyExclusiveCallbackGroup()
 
@@ -165,13 +183,6 @@ class Roomba(Node):
 		self.rotate_ac = ActionClient(self, RotateAngle, f'/{namespace}/rotate_angle', 
 											callback_group=cb_Action)
 		
-
-		# Variable Initialization
-		self.latest_dock_status = roomba_info.latest_dock_status #########!!!!!!!!!!!!! Was None
-		self.latest_pose_stamped = roomba_info.latest_pose_stamped
-		self.latest_ir_opcode = roomba_info.latest_ir_opcode
-		self.ir_opcode_history = roomba_info.ir_opcode_history  # A deque to store the history of opcodes in the auto-docking function
-
 
 	def reportSender(self, label="Undefined", action="Undefined",
 					isAtBase1=False, isAtBase2=False, isAtBase3=False,
@@ -231,66 +242,44 @@ class Roomba(Node):
 
 	##### Methods for movements #####
 	# def undock(self):
-	# 	# print("Sending report... \n")
-	# 	# self.reportSender("undock", isMoving=True)
 	# 	self.chirp(start_note)
-
-	# 	# Read current dock status, then undock
-	# 	self.dock_sensor.publish_dock_status() # Tells the publisher to update the dock status
-	# 	self.undock_ac.wait_for_server() # Wait till its ready
-	# 	undock_goal = Undock.Goal() # Make goal
-	# 	self.undock_ac.send_goal(undock_goal) # Send goal blocking
-		
-	# 	self.dock_sensor.publish_dock_status() # Tells the publisher to update the dock status
+	# 	# Use RoombaInfo's method to update dock status
+	# 	self.roomba_info.update_dock_status()
+	# 	self.undock_ac.wait_for_server()
+	# 	undock_goal = Undock.Goal()
+	# 	self.undock_ac.send_goal(undock_goal)
+	# 	# Again, use RoombaInfo's method
+	# 	self.roomba_info.update_dock_status()
 	# 	time.sleep(1)
-
-	# 	# print("Report sent \n")
 	# 	self.chirp(end_note)
 
+
+
 	def undock(self):
+		# Play a starting sound to indicate beginning of undocking
 		self.chirp(start_note)
-		# Use RoombaInfo's method to update dock status
-		self.roomba_info.update_dock_status()
+
+		# Wait for the action server to be ready
 		self.undock_ac.wait_for_server()
+
+		# Create a goal for the Undock action
 		undock_goal = Undock.Goal()
-		self.undock_ac.send_goal(undock_goal)
-		# Again, use RoombaInfo's method
-		self.roomba_info.update_dock_status()
+
+		# Send the goal to the action server and wait for it to complete
+		future = self.undock_ac.send_goal_async(undock_goal)
+		rclpy.spin_until_future_complete(self, future)
+
+		# Check the result of the undocking action
+		if future.result() is not None:
+			self.get_logger().info('Undocking successful.')
+			# Update dock status via RoombaInfo after undocking
+			self.roomba_info.update_dock_status(False)  # Assuming update_dock_status now accepts a boolean
+		else:
+			self.get_logger().error('Failed to undock.')
+
+		# Wait a bit before playing the end note to allow for any physical adjustments
 		time.sleep(1)
 		self.chirp(end_note)
-
-
-	def dock(self):
-		self.chirp(start_note)
-		self.chirp(start_note)
-
-		self.dock_ac.wait_for_server()
-		dock_goal = Dock.Goal()
-		self.dock_ac.send_goal(dock_goal)
-		self.dock_sensor.publish_dock_status()
-		time.sleep(1)
-		self.chirp(end_note)
-
-
-	def reset_pose(self):
-		"""
-		This function resets the robot's pose estimate.
-		"""
-		try:
-			# Create a request object
-			request = ResetPose.Request()
-
-			# Call the service asynchronously
-			response = self.reset_pose_srv.call_async(request)
-
-			if response is not None:
-				self.get_logger().info('ResetPose service called successfully.')
-				time.sleep(1)
-			else:
-				self.get_logger().error('No response from ResetPose service.')
-
-		except Exception as e:
-			self.get_logger().error('Failed to call ResetPose service: %r' % (e,))
 
 
 	def record_pose(self):
@@ -496,6 +485,7 @@ class Roomba(Node):
 			self.reportSender(label=roomba_label_1, action="undock_start", isAtBase1=True, isMoving=False)
 			self.undock()
 			self.reportSender(roomba_label_1, action="undock_done", isAtBase1=False, isMoving=True)
+			self.roomba_info.reset_pose()
 
 			# rotate amount
 			self.reportSender(roomba_label_1, action="rotate_start", isMoving=True)
@@ -676,22 +666,25 @@ def stop_all(exec,roomba,rclpy):
 if __name__ == '__main__':
 	rclpy.init()
 	namespace = 'create3_05AE'
+	
+	# Initialize RobotState first
+	robot_state = RobotState()
+
 	dock_sensor = DockStatusMonitorNode(namespace)
 	ir_sensor = IrMonitorNode(namespace)
 	odometry_sensor = OdomNode(namespace)
 	roomba_status_client = RobotClientNode(namespace)
 
-	print("B4")
-	info = RoombaInfo(namespace, dock_sensor, ir_sensor, odometry_sensor, roomba_status_client)
-	print("After info")
+	info = RoombaInfo(namespace, roomba_status_client, robot_state)
 	roomba = Roomba(namespace, info)
-	print("After roomba")
 
 	exec = MultiThreadedExecutor(7)
-	exec.add_node(roomba)
+	exec.add_node(dock_sensor)
+	exec.add_node(ir_sensor)
+	exec.add_node(odometry_sensor)
+	exec.add_node(roomba_status_client)
 	exec.add_node(info)
-
-
+	exec.add_node(roomba)
 
 	# time.sleep(0.1)
 	roomba.chirp(ready_notes)
@@ -720,7 +713,6 @@ if __name__ == '__main__':
 		print(f"Unexpected error: {error}")
 	finally:
 		exec.shutdown()
-
 		info.destroy_node()
 		roomba.destroy_node()
 		dock_sensor.destroy_node()
