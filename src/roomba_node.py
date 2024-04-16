@@ -96,28 +96,18 @@ class RobotState:
 
 
 class RoombaInfo(Node):
-	def __init__(self, namespace, roomba_status_client, robot_state):
+	def __init__(self, namespace, roomba_status_client, robot_state,
+			  dock_sensor, odometry_sensor, ir_sensor):
 		super().__init__('roomba_info_node')
 		self.roomba_status_client = roomba_status_client
 		self.robot_state = robot_state
 
-
 		# Subscriptions: 
-		# Split up to compensate for noisy subscriptions
-		cb_dockstatus = MutuallyExclusiveCallbackGroup() # Perhaps unneeded since the dock_status_node takes care of the dockstatus
-		cb_ir = MutuallyExclusiveCallbackGroup()
-		cb_pose = MutuallyExclusiveCallbackGroup()
-
-
 		self.dock_status_sub_ = self.create_subscription(Bool, f'/{namespace}/check_dock_status', 
-												self.dock_status_callback, 10, callback_group=cb_dockstatus)
-
-		self.ir_opcode_sub_ = self.create_subscription(String, f'/{namespace}/ir_opcode_number', 
-														self.ir_opcode_callback, qos_profile_sensor_data, callback_group=cb_ir)
+												self.dock_status_callback, 10)
 
 		self.current_pose_sub_ = self.create_subscription(PoseStamped, f'/{namespace}/pose_stamped', 
 												self.pose_callback, qos_profile_sensor_data, callback_group=cb_pose)
-
 
 		# Services:
 		self.reset_pose_srv = self.create_client(ResetPose, f'/{namespace}/reset_pose')
@@ -135,13 +125,8 @@ class RoombaInfo(Node):
 		self.robot_state.update_pose_stamped(msg) # NavigateToPosition action needs the whole PoseStamped msg
 		self.get_logger().info(f"Received stamped pose status: {self.robot_state.get_pose_stamped()}")
 
-	def ir_opcode_callback(self, msg):
-		"""Update the internal RobotState with the latest IR opcode."""
-		try:
-			self.robot_state.update_ir_opcode(msg.data)
-			self.get_logger().info(f"Received IrOpcode: {self.robot_state.get_ir_opcode()}")
-		except Exception as e:
-			self.get_logger().error(f"Failed to handle IrOpcode message: {e}")
+
+
 
 	def reset_pose(self):
 		"""Public method to reset the robot's pose estimate."""
@@ -158,6 +143,9 @@ class RoombaInfo(Node):
 		except Exception as e:
 			self.get_logger().error(f'Failed to call ResetPose service: {e}')
 			return False
+		
+
+	
 
 
 class Roomba(Node):
@@ -388,75 +376,6 @@ class Roomba(Node):
 			self.get_logger().error("No pose has been recorded.")
 
 
-	def docking(self):
-		while self.latest_dock_status != 'True':  # Ensuring the comparison is to a string if that's what's expected
-			try:
-				self.dock_sensor.publish_dock_status()
-				self.dock_sensor.publish_dock_status()
-				self.latest_ir_opcode = self.ir_sensor.publish_ir_opcode()
-
-				# Add the latest opcode to the history
-				print("Dock function IrOpcode readout:", self.latest_ir_opcode)
-				print("Start- latest_dock_status:", self.latest_dock_status)
-
-				# Check if the latest_ir_opcode has been updated
-				if self.latest_ir_opcode is not None:
-					if self.latest_dock_status == True:
-						break
-
-					if self.latest_ir_opcode == 160 or self.latest_ir_opcode == 161:
-						# Reiterate, do nothing just continue the loop
-						self.ir_opcode_history.append(self.latest_ir_opcode)
-						self.get_logger().info(f"IR Opcode {self.latest_ir_opcode} seen, reiterating.")
-						self.dock_sensor.publish_dock_status()
-
-
-					elif self.latest_ir_opcode == 168:
-						# Rotate right slightly
-						self.rotate_amnt_async(pi/36)
-						time.sleep(0.2)
-						self.get_logger().info("Rotating right slightly due to Red Buoy detection.")
-						self.ir_opcode_history.clear()  # Clear the history after movement
-						self.dock_sensor.publish_dock_status()
-
-					
-					elif self.latest_ir_opcode == 164:
-						# Rotate left slightly
-						self.rotate_amnt_async(-pi/36)
-						time.sleep(0.2)
-
-						self.get_logger().info("Rotating left slightly due to Green Buoy detection.")
-						self.ir_opcode_history.clear()  # Clear the history after movement
-						self.dock_sensor.publish_dock_status()
-					
-					elif self.latest_ir_opcode == 172:
-						# Drive forward a small amount
-						self.drive_amnt_async(0.01)
-						time.sleep(0.2)
-
-						self.get_logger().info("Driving forward due to Red Buoy and Green Buoy detection.")
-						self.ir_opcode_history.clear()  # Clear the history after movement
-						self.dock_sensor.publish_dock_status()
-
-				if len(self.ir_opcode_history) == self.ir_opcode_history.maxlen:
-					self.drive_amnt(-0.3)
-					self.navigate_to_recorded_pose()
-					self.get_logger().info("Backing up due to continuous 160 or 161 opcodes.")
-					self.ir_opcode_history.clear()  # Clear the history after movement
-
-				# Print the current count of the deque
-				print("Current opcode history count:", len(self.ir_opcode_history))
-				self.dock_sensor.publish_dock_status()
-				# print("END- latest_dock_status:", self.latest_dock_status)
-
-				print("\n")
-				time.sleep(0.3)  # Sleep for throttling
-			except Exception as e:
-				self.get_logger().error('Error in docking loop: {}'.format(e))
-				break  # Or handle the exception appropriately
-
-
-
 	def takeoff(self):
 		try:
 		
@@ -675,7 +594,8 @@ if __name__ == '__main__':
 	odometry_sensor = OdomNode(namespace)
 	roomba_status_client = RobotClientNode(namespace)
 
-	info = RoombaInfo(namespace, roomba_status_client, robot_state)
+	info = RoombaInfo(namespace, roomba_status_client, robot_state,
+				   dock_sensor, odometry_sensor, ir_sensor)
 	roomba = Roomba(namespace, info)
 
 	exec = MultiThreadedExecutor(7)
