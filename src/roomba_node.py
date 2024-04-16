@@ -97,7 +97,7 @@ class RobotState:
 
 class RoombaInfo(Node):
 	def __init__(self, namespace, roomba_status_client, robot_state,
-			  dock_sensor, odometry_sensor, ir_sensor):
+			  dock_sensor, odometry_sensor):
 		super().__init__('roomba_info_node')
 		self.roomba_status_client = roomba_status_client
 		self.robot_state = robot_state
@@ -124,8 +124,6 @@ class RoombaInfo(Node):
 		"""Update the internal RobotState with the latest pose."""
 		self.robot_state.update_pose_stamped(msg) # NavigateToPosition action needs the whole PoseStamped msg
 		self.get_logger().info(f"Received stamped pose status: {self.robot_state.get_pose_stamped()}")
-
-
 
 
 	def reset_pose(self):
@@ -155,21 +153,12 @@ class Roomba(Node):
 		self.robot_state = robot_state
 
 		# Action clients:
-		cb_Action = MutuallyExclusiveCallbackGroup()
-		cb_chirp  = MutuallyExclusiveCallbackGroup()
-
-		self.dock_ac = ActionClient(self, Dock, f'/{namespace}/dock',
-							  				callback_group=cb_Action)
-		self.undock_ac = ActionClient(self, Undock, f'/{namespace}/undock',
-								 			callback_group=cb_Action)
-		self.drive_ac = ActionClient(self, DriveDistance, f'/{namespace}/drive_distance', 
-							   				callback_group=cb_Action)
-		self.nav_to_pos_ac = ActionClient(self, NavigateToPosition, f'/{namespace}/navigate_to_position', 
-											callback_group=cb_Action)
-		self.audio_ac = ActionClient(self, AudioNoteSequence, f'/{namespace}/audio_note_sequence', 
-											callback_group=cb_chirp)
-		self.rotate_ac = ActionClient(self, RotateAngle, f'/{namespace}/rotate_angle', 
-											callback_group=cb_Action)
+		self.dock_ac = ActionClient(self, Dock, f'/{namespace}/dock')
+		self.undock_ac = ActionClient(self, Undock, f'/{namespace}/undock')
+		self.drive_ac = ActionClient(self, DriveDistance, f'/{namespace}/drive_distance')
+		self.nav_to_pos_ac = ActionClient(self, NavigateToPosition, f'/{namespace}/navigate_to_position')
+		self.rotate_ac = ActionClient(self, RotateAngle, f'/{namespace}/rotate_angle')
+		self.audio_ac = ActionClient(self, AudioNoteSequence, f'/{namespace}/audio_note_sequence')
 		
 
 	def reportSender(self, label="Undefined", action="Undefined",
@@ -590,21 +579,20 @@ if __name__ == '__main__':
 	robot_state = RobotState()
 
 	dock_sensor = DockStatusMonitorNode(namespace)
-	ir_sensor = IrMonitorNode(namespace)
 	odometry_sensor = OdomNode(namespace)
 	roomba_status_client = RobotClientNode(namespace)
 
 	info = RoombaInfo(namespace, roomba_status_client, robot_state,
-				   dock_sensor, odometry_sensor, ir_sensor)
+					dock_sensor, odometry_sensor)
+	
 	roomba = Roomba(namespace, info)
 
-	exec = MultiThreadedExecutor(7)
-	exec.add_node(dock_sensor)
-	exec.add_node(ir_sensor)
-	exec.add_node(odometry_sensor)
-	exec.add_node(roomba_status_client)
-	exec.add_node(info)
-	exec.add_node(roomba)
+	exec = MultiThreadedExecutor(6) # Acer laptop and Surface have 8 threads
+	exec.add_node(dock_sensor) # 1
+	exec.add_node(odometry_sensor) # 1
+	exec.add_node(roomba_status_client) # 1
+	exec.add_node(info) # 2 (one for each service in the roomba_status_client)
+	exec.add_node(roomba) # 1 
 
 	# time.sleep(0.1)
 	roomba.chirp(ready_notes)

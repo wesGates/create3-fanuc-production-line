@@ -148,7 +148,7 @@ if __name__ == '__main__':
 
 	# ready_status_service_node = ReadyStatusPublisherNode()
 	tester_client_node = RobotClientNode('tester')
-	exec = MultiThreadedExecutor(4)
+	exec = MultiThreadedExecutor(2) # One for each service
 
 	exec.add_node(tester_client_node)
 	# exec.add_node(ready_status_service_node)
