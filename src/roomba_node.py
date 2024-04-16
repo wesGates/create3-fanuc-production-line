@@ -90,17 +90,15 @@ class RobotState:
 	def get_pose_stamped(self):
 		return self.latest_pose_stamped
 
-	def get_ir_opcode(self):
-		return self.latest_ir_opcode
-
 
 
 class RoombaInfo(Node):
-	def __init__(self, namespace, roomba_status_client, robot_state,
-			  dock_sensor, odometry_sensor):
+	def __init__(self, namespace, roomba_status_client, robot_state, dock_sensor, odometry_sensor):
 		super().__init__('roomba_info_node')
 		self.roomba_status_client = roomba_status_client
 		self.robot_state = robot_state
+		self.dock_sensor = dock_sensor
+		self.odometry_sensor = odometry_sensor
 
 		# Subscriptions: 
 		self.dock_status_sub_ = self.create_subscription(Bool, f'/{namespace}/check_dock_status', 
@@ -120,10 +118,15 @@ class RoombaInfo(Node):
 		self.robot_state.update_dock_status(msg.data)
 		self.get_logger().info(f"Received /is_docked status: {self.robot_state.get_dock_status()}")
 
+
 	def pose_callback(self, msg):
 		"""Update the internal RobotState with the latest pose."""
 		self.robot_state.update_pose_stamped(msg) # NavigateToPosition action needs the whole PoseStamped msg
 		self.get_logger().info(f"Received stamped pose status: {self.robot_state.get_pose_stamped()}")
+
+
+	def request_odometry_update(self):
+		self.odometry_sensor.publish_odometry()
 
 
 	def reset_pose(self):
@@ -255,7 +258,7 @@ class Roomba(Node):
 			self.get_logger().error('Failed to undock.')
 
 		# Wait a bit before playing the end note to allow for any physical adjustments
-		time.sleep(1)
+		time.sleep(1) # NOTE: Consider axing the waits soon!!!
 		self.chirp(end_note)
 
 
@@ -582,8 +585,7 @@ if __name__ == '__main__':
 	odometry_sensor = OdomNode(namespace)
 	roomba_status_client = RobotClientNode(namespace)
 
-	info = RoombaInfo(namespace, roomba_status_client, robot_state,
-					dock_sensor, odometry_sensor)
+	info = RoombaInfo(namespace, roomba_status_client, robot_state, dock_sensor, odometry_sensor)
 	
 	roomba = Roomba(namespace, info)
 
