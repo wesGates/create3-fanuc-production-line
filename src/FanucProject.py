@@ -65,14 +65,14 @@ class FanucTopic(Node):
 		self.moveSrv = self.create_service(Trigger, 'check_moving', self.service_callback)'''
 		
 		# This subscribes to the Fanuc topic
-		#self.gripperSubs = self.create_subscription(CurGripper, f'/{namespace}/grip_status', self.gripListener, qos_profile_sensor_data)
-		#self.cartSubs = self.create_subscription(CurCartesian, f'/{namespace}/cur_cartesian', self.cartListener, qos_profile_sensor_data)
-		#self.jointSubs = self.create_subscription(CurJoints, f'/{namespace}/cur_joints', self.jointListener, qos_profile_sensor_data)
+		self.gripperSubs = self.create_subscription(CurGripper, f'/{namespace}/grip_status', self.gripListener, qos_profile_sensor_data)
+		self.cartSubs = self.create_subscription(CurCartesian, f'/{namespace}/cur_cartesian', self.cartListener, qos_profile_sensor_data)
+		self.jointSubs = self.create_subscription(CurJoints, f'/{namespace}/cur_joints', self.jointListener, qos_profile_sensor_data)
 		self.convSubs = self.create_subscription(ProxReadings, f'/{namespace}/prox_readings', self.convListener, qos_profile_sensor_data)
-		#self.moveSubs = self.create_subscription(IsMoving, f'/{namespace}/is_moving', self.moveListener, qos_profile_sensor_data)
+		self.moveSubs = self.create_subscription(IsMoving, f'/{namespace}/is_moving', self.moveListener, qos_profile_sensor_data)
 
 		# This will hold the current value from the Fanuc topic
-		self.curValue = False # Temporary default value
+		#self.curValue = False # Temporary default value
 		
 	def gripListener(self, msg):
 		"""
@@ -314,7 +314,7 @@ class FanucActions(Node):
 		self.get_logger().info("Waiting for bunsen_conv status to become False...")
 		self.beaker_status_client.wait_for_specific_status('bunsen_conv', False)		# Wait for pickup
 
-		self.get_logger().info("Setting beaker_conv's status to True...")
+		self.get_logger().info("Setting beaker_conv's status to False...")
 		self.beaker_status_client.update_robot_status('beaker_conv', False)         	# Ready at conveyor 1
 
 		self.topicNode.label = "Moving to home position"
@@ -460,6 +460,8 @@ def stop_all(exec,robot,rclpy):
 if __name__ == '__main__':
 	rclpy.init()
 	# Create our 6 nodes
+	exec = MultiThreadedExecutor(7)
+	
 	beaker_status_client = RobotClientNode('beaker')
 	bunsen_status_client = RobotClientNode('bunsen')
 	listenerBeaker = FanucTopic('beaker')
@@ -467,15 +469,13 @@ if __name__ == '__main__':
 	mainBeaker = FanucActions('beaker')
 	mainBunsen = FanucActions('bunsen')
 
-	exec = MultiThreadedExecutor(7)
-
-	broker_thread = threading.Thread(target=mqttc.loop_start)
+	'''broker_thread = threading.Thread(target=mqttc.loop_start)
 	broker_thread.start()
  
 	stop_threadBeaker = threading.Thread(target=stop_all,args=(exec,mainBeaker,rclpy))
 	stop_threadBeaker.start()
 	stop_threadBunsen = threading.Thread(target=stop_all,args=(exec,mainBunsen,rclpy))
-	stop_threadBunsen.start()
+	stop_threadBunsen.start()'''
 
 	# Add our nodes
 	exec.add_node(mainBeaker)
@@ -487,10 +487,10 @@ if __name__ == '__main__':
 	# mqttc.loop_start()???
 	
 	# This allows us to start the function once the node is spinning
-	keycom = KeyCommander([(KeyCode(char='s'), mainBeaker.taskBeaker),])
-	keycom = KeyCommander([(KeyCode(char='d'), mainBunsen.taskBunsen),])
-	keycom = KeyCommander([(KeyCode(char='e'), mainBeaker.test),])
-	keycom = KeyCommander([(KeyCode(char='r'), mainBunsen.test),])
+	keycom1 = KeyCommander([(KeyCode(char='s'), mainBeaker.taskBeaker),])
+	keycom2 = KeyCommander([(KeyCode(char='d'), mainBunsen.taskBunsen),])
+	keycom3 = KeyCommander([(KeyCode(char='e'), mainBeaker.test),])
+	keycom4 = KeyCommander([(KeyCode(char='r'), mainBunsen.test),])
 	print("Ready")
 	
 	exec.spin()
