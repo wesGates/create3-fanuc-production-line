@@ -64,15 +64,6 @@ error_notes = [
 
 topic = "vandalrobot"
 
-# class BrokerNode(Node):
-# 	def __init__(self, stop_all)
-# 	# Establish start and stop messaging from the broker
-# 	broker_thread = threading.Thread(target=mqttc.loop_start)
-# 	broker_thread.start()
-	
-# 	stop_thread = threading.Thread(target=stop_all,args=(exec,roomba,rclpy))
-# 	stop_thread.start()
-
 
 class RoombaInfo(Node):
 	def __init__(self, namespace, roomba_status_client, dock_sensor, odometry_sensor):
