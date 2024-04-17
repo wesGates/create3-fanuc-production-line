@@ -1,38 +1,33 @@
-# ROS Imports
-import rclpy
-from rclpy.node import Node
-from rclpy.qos import qos_profile_sensor_data
-from rclpy.executors import MultiThreadedExecutor
-from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
-
-from rclpy.action.client import ActionClient
-from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
-from std_msgs.msg import String, Bool 
-
-
-import time
-import sys
-sys.path.append("../dependencies/")
-
-# Create3 Packages
-import irobot_create_msgs
-from irobot_create_msgs.action import DriveDistance, Undock, RotateAngle, Dock, NavigateToPosition, AudioNoteSequence
-from geometry_msgs.msg import PoseStamped
-from nav_msgs.msg import Odometry  # Import Odometry
-from irobot_create_msgs.srv import ResetPose
-from irobot_create_msgs.msg import AudioNoteVector, AudioNote, IrIntensityVector, IrOpcode
-from builtin_interfaces.msg import Duration
-
-# key_commander stuff
-from pynput.keyboard import KeyCode
-from key_commander import KeyCommander
-
 # Python Packages
 import random, time
 from math import pi
 from collections import deque
 import json
 from datetime import datetime
+import time
+import sys
+sys.path.append("../dependencies/")
+
+# ROS Imports
+import rclpy
+from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data
+from rclpy.executors import MultiThreadedExecutor
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup
+from rclpy.action.client import ActionClient
+from std_msgs.msg import String, Bool 
+
+# Create3 Packages
+import irobot_create_msgs
+from irobot_create_msgs.action import DriveDistance, Undock, RotateAngle, Dock, NavigateToPosition, AudioNoteSequence
+from geometry_msgs.msg import PoseStamped
+from irobot_create_msgs.srv import ResetPose
+from irobot_create_msgs.msg import AudioNoteVector, AudioNote
+from builtin_interfaces.msg import Duration
+
+# key_commander stuff
+from pynput.keyboard import KeyCode
+from key_commander import KeyCommander
 
 # Threading
 from rclpy.executors import MultiThreadedExecutor
@@ -45,7 +40,6 @@ from brokerSender import mqttc
 
 # Node Imports
 from dock_status_node import DockStatusMonitorNode
-from ir_status_node import IrMonitorNode
 from odometry_node import OdomNode
 from RobotClientNode import RobotClientNode
 
@@ -155,7 +149,7 @@ class Roomba(Node):
 		Defaults to False.
 		"""
 
-		self.record_pose() # This should update the recorded pose whenever the report is sent
+		self.record_pose() # This updates the recorded pose whenever the report is sent
 
 		data = {
 			"messageType": messageType,
@@ -253,7 +247,7 @@ class Roomba(Node):
 		drive_goal.distance = distance
 		self.drive_ac.send_goal(drive_goal)
 		
-		time.sleep(1)  # Consider using async
+		time.sleep(1)  # Unneeded since the send_goal() is blocking
 
 		self.chirp(end_note)
 
@@ -264,7 +258,7 @@ class Roomba(Node):
 		self.rotate_ac.wait_for_server()
 		rotate_goal = RotateAngle.Goal()
 		rotate_goal.angle = angle
-		self.rotate_ac.send_goal(rotate_goal) # !!!!!! Getting stuck here!
+		self.rotate_ac.send_goal(rotate_goal)
 		
 
 	def navigate_to_recorded_pose(self):
@@ -314,11 +308,13 @@ class Roomba(Node):
 			roomba_label_4 = "Finished cycle."
 
 			##############################################################################################
-			""" Simulated circuit for testing out status checking """			
-			""" Run a simulated BeakerNode and BunsenNode for toggling ready statuses """			
+			""" Movement circuit for transporting the dice block."""			
+			""" For testing, run a simulated robot node using RobotClientNode_tester.py for toggling ready statuses. """			
 			##############################################################################################			
 
-			## Actions for process 1: Navigating from base1 to base 2 ###
+
+
+			# Actions for process 1: Navigating from base1 to base 2
 			# Undock and reset pose
 			self.reportSender(roomba_label_1_1, action="undock_start", isAtBase1=True, isMoving=False)
 			self.undock()
@@ -339,16 +335,16 @@ class Roomba(Node):
 			self.reportSender(roomba_label_1_1, action="rotate_start", isMoving=True)
 			self.rotate_amnt(pi/5)
 			self.reportSender(roomba_label_1_1, action="rotate_done", isMoving=True)
-			############################
-
+			
 			# dock
 			self.reportSender(roomba_label_1_1, action="dock_start", isMoving=True)
 			self.dock()
 			self.reportSender(roomba_label_1_1, action="dock_done", isMoving=False, isAtBase2=True)			
 
+			# Tell the broker where the dice block is in the circuit.
 			self.reportSender(roomba_label_1_2)
 
-			# AFTER DOCKING AT BASE2
+			# COMMUNICATION AFTER DOCKING AT BASE2
 			#####################################################################
 			# Step 1-1: Set the status of roomba_base2 to True after docking
 			self.get_logger().info("Setting roomba_base2 status to True...")
@@ -371,7 +367,9 @@ class Roomba(Node):
 			# Tell the broker the dice block is delivered
 			self.reportSender(roomba_label_1_3)
 
-			### Actions for process 2: Navigating to base3 from base2 ###
+
+
+			# Actions for process 2: Navigating from base2 to base3.
 			self.reportSender(roomba_label_2_1, action="undock_start", isAtBase2=True, isMoving=False)
 			self.undock()
 			self.reportSender(roomba_label_2_1, action="undock_done", isAtBase2=False, isMoving=True)
@@ -411,9 +409,12 @@ class Roomba(Node):
 			self.dock()
 			self.reportSender(roomba_label_2_1, action="dock_done", isMoving=False, isAtBase3=True)
 
+			# Tell broker that the roomba is waiting for the dice block to be delivered to the roomba 
 			self.reportSender(roomba_label_2_2)
 
-			# AFTER DOCKING AT BASE3
+
+
+			# COMMUNICATION AFTER DOCKING AT BASE3
 			#####################################################################
 			# Step 2-1: After docking, wait for bunsen to become True before setting roomba_base3 to true
 			self.get_logger().info("Waiting for bunsen status to become True...")
@@ -432,26 +433,18 @@ class Roomba(Node):
 			# Step 2-4: Reset roomba_base3 to False
 			self.get_logger().info("Setting roomba_base3 status to False...")
 			roomba_info.roomba_status_client.update_robot_status('roomba_base3', False)
-			
 			#####################################################################
 			
 			# Tell broker the dice block has been received from bunsen
 			self.reportSender(roomba_label_2_3)
 
-			### Actions for process 3: Navigating to base1 from base3 ###
+
+
+			# Actions for process 3: Navigating to base1 from base3
 			self.reportSender(roomba_label_3, action="undock_start", isAtBase3=True, isMoving=False)
 			self.undock()
 			self.reportSender(roomba_label_3, action="undock_done", isAtBase3=False, isMoving=True)
    
-
-			#####################################################################
-			# AFTER LEAVING BASE3
-			# Step 3: Print statement indicating the transition
-			self.get_logger().info("Success! Traveling from base 3 to base 1.")
-			print("\nYou may run the test function again on specific button press ")
-			#####################################################################
-
-
 			# drive amount
 			self.reportSender(roomba_label_3, action="drive_start", isMoving=True)
 			self.drive_amnt(2.60)
@@ -486,6 +479,8 @@ class Roomba(Node):
 			self.reportSender(roomba_label_3, action="dock_start", isMoving=True)
 			self.dock()
 			self.reportSender(roomba_label_4, action="dock_done", isMoving=False, isAtBase1=True)
+
+			# Send the 'stop' message to signal to the broker that a cycle is completed
 			self.reportSender(roomba_label_4, messageType = "stop", action="dock_done", isMoving=False, isAtBase1=True)
 
 
@@ -509,14 +504,10 @@ if __name__ == '__main__':
 	rclpy.init()
 	namespace = 'create3_05AE'
 	
-	# Initialize RobotState first
-
 	dock_sensor = DockStatusMonitorNode(namespace)
 	odometry_sensor = OdomNode(namespace)
 	roomba_status_client = RobotClientNode(namespace)
-
 	roomba_info = RoombaInfo(namespace, roomba_status_client, dock_sensor, odometry_sensor)
-	
 	roomba = Roomba(namespace, roomba_info)
 
 	exec = MultiThreadedExecutor(7) # Acer laptop and Surface have 8 threads
@@ -527,25 +518,23 @@ if __name__ == '__main__':
 	exec.add_node(roomba) # 1 
 	# + 1 for broker thread
 
-	# time.sleep(0.1)
-	roomba.chirp(ready_notes)
 
-
-	# Establish start and stop messaging from the broker
+	# Establish the start and stop messaging threads for the broker
 	broker_thread = threading.Thread(target=mqttc.loop_start)
 	broker_thread.start()
 	
 	stop_thread = threading.Thread(target=stop_all,args=(exec,roomba,rclpy))
 	stop_thread.start()
 
+	roomba.chirp(ready_notes)
 
-	# exec.add_node(broker_thread)
 
 	keycom = KeyCommander([
 		(KeyCode(char='1'), roomba.takeoff),
 
 	])
 	print(" Press '1' to intitiate launch")
+
 
 	try:
 		exec.spin()  # execute Roomba callbacks until shutdown or destroy is called

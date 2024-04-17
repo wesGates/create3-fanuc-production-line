@@ -1,11 +1,8 @@
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
-from std_msgs.msg import String
-from irobot_create_msgs.msg import DockStatus
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Header, String, Int32, Float32, UInt8, Int16 # Some topics have specific datatypes (POTENTIALLY USELESS!!!)
 
 
 class OdomNode(Node):
@@ -26,6 +23,7 @@ class OdomNode(Node):
     def odometry_listener(self, odometry_msg):
         # Update the current odometry
         self.current_odometry = odometry_msg
+
 
     def publish_odometry(self):
         # Check if we have received odometry data
