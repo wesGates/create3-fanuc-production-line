@@ -540,7 +540,6 @@ if __name__ == '__main__':
 	roomba.chirp(ready_notes)
 
 
-# def BrokerNode(Node):
 	# Establish start and stop messaging from the broker
 	broker_thread = threading.Thread(target=mqttc.loop_start)
 	broker_thread.start()
