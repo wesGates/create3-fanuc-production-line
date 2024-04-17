@@ -100,7 +100,7 @@ class RoombaInfo(Node):
 
 	def dock_status_callback(self, msg):
 		"""Update the internal RobotState with the latest dock status."""
-		self.latest_dock_status = msg
+		self.latest_dock_status = msg.data
 		self.get_logger().info(f"Received /is_docked status: {self.latest_dock_status}")
 
 
@@ -165,7 +165,6 @@ class Roomba(Node):
 		"""
 
 		self.record_pose() # This should update the recorded pose whenever the report is sent
-		# time.sleep(1)
 
 		data = {
 			"messageType": messageType,
@@ -173,7 +172,7 @@ class Roomba(Node):
 			"nodeId": "gatesroomba12",
 			"productLine": "moscow",
 			"roombareport": {
-				"isDock": str(roomba_info.latest_dock_status),
+				"isDock": roomba_info.latest_dock_status,
 				"action": action,
 				"label":label,
 				"isReady": isReady,
@@ -209,7 +208,6 @@ class Roomba(Node):
 
 		# Send the goal
 		self.audio_ac.send_goal_async(goal)
-		print("chirped")
 
 
 	##### Methods for movements #####
@@ -355,8 +353,9 @@ class Roomba(Node):
 			# dock
 			self.reportSender(roomba_label_1_1, action="dock_start", isMoving=True)
 			self.dock()
-			self.reportSender(roomba_label_1_2, action="dock_done", isMoving=False, isAtBase2=True)			
+			self.reportSender(roomba_label_1_1, action="dock_done", isMoving=False, isAtBase2=True)			
 
+			self.reportSender(roomba_label_1_2)
 
 			# AFTER DOCKING AT BASE2
 			#####################################################################
@@ -388,7 +387,7 @@ class Roomba(Node):
 
 			# drive amount
 			self.reportSender(roomba_label_2_1, action="drive_start", isMoving=True)
-			self.drive_amnt(2.65)
+			self.drive_amnt(2.50)
 			self.reportSender(roomba_label_2_1, action="drive_done", isMoving=True)
 
 			# rotate amount
@@ -408,7 +407,7 @@ class Roomba(Node):
 
 			# drive amount
 			self.reportSender(roomba_label_2_1, action="drive_start", isMoving=True)
-			self.drive_amnt(2.3)
+			self.drive_amnt(2.1)
 			self.reportSender(roomba_label_2_1, action="drive_done", isMoving=True)
 
 			# # rotate amount (attempt to accelerate docking)
@@ -419,8 +418,9 @@ class Roomba(Node):
 			# dock
 			self.reportSender(roomba_label_2_1, action="dock_start", isMoving=True)
 			self.dock()
-			self.reportSender(roomba_label_2_2, action="dock_done", isMoving=False, isAtBase3=True)
+			self.reportSender(roomba_label_2_1, action="dock_done", isMoving=False, isAtBase3=True)
 
+			self.reportSender(roomba_label_2_2)
 
 			# AFTER DOCKING AT BASE3
 			#####################################################################
