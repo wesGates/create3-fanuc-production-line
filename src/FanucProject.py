@@ -446,10 +446,11 @@ class FanucActions(Node):
 		if self.topicNode.beltSensorRear == False:
 			while self.topicNode.beltSensorRear == False:
 				self.convMove('reverse')
-				sleep(.25)
+				sleep(.2)
 				self.convMove('stop')
+				sleep(.2)
 			self.convMove('reverse')
-			sleep(.25)
+			sleep(.2)
 			self.convMove('stop')
 
 	def test(self):
