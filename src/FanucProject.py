@@ -32,6 +32,8 @@ from brokerSender import mqttc
 
 from RobotClientNode import RobotClientNode
 
+import ctypes
+
 topic = "vandalrobot"
 
 # Node that listens to the fanuc topic
@@ -56,7 +58,7 @@ class FanucTopic(Node):
 
 		self.fault = ""
 		
-
+		
 		# Create a Service node for sending data to 'Main', could be a Topic also
 		'''self.gripperSrv = self.create_service(Trigger, 'check_gripper', self.service_callback)
 		self.cartSrv = self.create_service(Trigger, 'check_cartesian', self.service_callback)
@@ -64,11 +66,12 @@ class FanucTopic(Node):
 		self.convSrv = self.create_service(Trigger, 'check_conveyor', self.service_callback)
 		self.moveSrv = self.create_service(Trigger, 'check_moving', self.service_callback)'''
 		
+		cb_conveyors = MutuallyExclusiveCallbackGroup()
 		# This subscribes to the Fanuc topic
 		self.gripperSubs = self.create_subscription(CurGripper, f'/{namespace}/grip_status', self.gripListener, qos_profile_sensor_data)
 		self.cartSubs = self.create_subscription(CurCartesian, f'/{namespace}/cur_cartesian', self.cartListener, qos_profile_sensor_data)
 		self.jointSubs = self.create_subscription(CurJoints, f'/{namespace}/cur_joints', self.jointListener, qos_profile_sensor_data)
-		self.convSubs = self.create_subscription(ProxReadings, f'/{namespace}/prox_readings', self.convListener, qos_profile_sensor_data)
+		self.convSubs = self.create_subscription(ProxReadings, f'/{namespace}/prox_readings', self.convListener, qos_profile_sensor_data, callback_group=cb_conveyors)
 		self.moveSubs = self.create_subscription(IsMoving, f'/{namespace}/is_moving', self.moveListener, qos_profile_sensor_data)
 
 		# This will hold the current value from the Fanuc topic
@@ -179,7 +182,7 @@ class FanucActions(Node):
 			"date": str(datetime.now())
 		}
 	
-		#mqttc.publish(topic, json.dumps(data))
+		mqttc.publish(topic, json.dumps(data))
 		
 		
 	def cartMove(self, x, y, z, w, p, r):
@@ -217,13 +220,13 @@ class FanucActions(Node):
 		self.reportSender()
 
 	def convMove(self, direction):
-		self.topicNode.action = "convMove_start"
+		'''self.topicNode.action = "convMove_start"
 		self.reportSender()
 
 		if direction == 'forward' or direction == 'reverse':
 			self.topicNode.isBeltMoving = True
 		elif direction == 'stop':
-			self.topicNode.isBeltMoving = False
+			self.topicNode.isBeltMoving = False'''
 		self.conv_ac.wait_for_server()
 		conv_goal = Conveyor.Goal()
 		conv_goal.command = direction
@@ -249,19 +252,20 @@ class FanucActions(Node):
 		self.reportSender()
 
 	def taskBeaker(self):
+		self.topicNode.label = "Waiting for start signal"
 		self.schunkMove('open')
 		
 		self.cartMove(302.556, -539.279, -83.733, -179.284, -2.058, -120.535)           # Avoid table
 		self.cartMove(618.352, 1.623, -83.733, -179.284, -2.058, -59.679)               # Home
 		
-		# while not brokerSender.start_all_message:                                      # Wait for start signal
-		# 	pass
+		while not brokerSender.start_all_message:                                      # Wait for start signal
+			pass
 
-		self.topicNode.label = "Picking up dice block at base 2"
+		self.topicNode.label = "Waiting for dice block at base 2"
 
 		self.cartMove(302.556, -539.279, -83.733, -179.284, -2.058, -120.535)           # Avoid table
 		#self.cartMove(-118.402, -561.427, -1012.155, -177.467, -2.058, -149.770)
-		self.jointMove(-87.14, 89.965, -103.104, 3.492, 12.337, -69.112)                # Dock 2 approach
+		self.jointMove(-87.139, 89.963, -104.325, 3.494, 13.339, -69.117)                # Dock 2 approach
 
 		self.get_logger().info("Setting Beaker's status to True...")
 		self.beaker_status_client.update_robot_status('beaker', True)
@@ -269,13 +273,15 @@ class FanucActions(Node):
 		self.get_logger().info("Waiting for roomba_base2 status to become True...")
 		self.beaker_status_client.wait_for_specific_status('roomba_base2', True)
 
+		self.topicNode.label = "Picking up dice block at base 2"
+
 		#self.jointMove(-88.794, 97.111, -108.691, 6.410, 20.199, -64.552)              # Pickup (old)
-		self.jointMove(-87.365, 95.745, -103.319, 3.542, 13.117, -69.11)                # Pickup
+		self.jointMove(-88.292, 96.144, -106.217, 3.542, 17.963, -69.112)                # Pickup
 		
 		self.topicNode.withDice = True
 		self.schunkMove('close')
 
-		self.jointMove(-87.14, 89.965, -103.104, 3.492, 12.337, -69.112)                # Dock 2 approach
+		self.jointMove(-87.139, 89.963, -104.325, 3.494, 13.339, -69.117)                # Dock 2 approach
 
 		self.get_logger().info("Setting Beaker's status to False...")
 		self.beaker_status_client.update_robot_status('beaker', False)
@@ -311,11 +317,11 @@ class FanucActions(Node):
 		self.get_logger().info("Setting beaker_conv's status to True...")
 		self.beaker_status_client.update_robot_status('beaker_conv', True)         		# Ready at conveyor 1
 
-		self.get_logger().info("Waiting for bunsen_conv status to become False...")
+		'''self.get_logger().info("Waiting for bunsen_conv status to become False...")
 		self.beaker_status_client.wait_for_specific_status('bunsen_conv', False)		# Wait for pickup
 
 		self.get_logger().info("Setting beaker_conv's status to False...")
-		self.beaker_status_client.update_robot_status('beaker_conv', False)         	# Ready at conveyor 1
+		self.beaker_status_client.update_robot_status('beaker_conv', False)         	# Ready at conveyor 1'''
 
 		self.topicNode.label = "Moving to home position"
 
@@ -330,16 +336,17 @@ class FanucActions(Node):
 
 
 	def taskBunsen(self):
+		self.topicNode.label = "Waiting for start signal"
 		self.jointMove(57.792, 11.879, -30.824, -9.696, -38.583, -63.616)
 		self.cartMove(568.058, -75.22, 19.527, -179.637, 1.597, 29.106)                 # Home
 		self.schunkMove('open')
 
-		# while not brokerSender.start_all_message:                                       # Wait for start signal
-		# 	pass
+		while not brokerSender.start_all_message:                                       # Wait for start signal
+			pass
 
-		self.topicNode.label = "Picking up dice block at conveyor 1"
+		self.topicNode.label = "Waiting for dice block at conveyor 1"
 
-		self.cartMove(75.396, -831.926, -151.291, -178.373, -0.332, 26.7)               # Conveyor 1 approach end
+		self.cartMove(55.396, -831.926, -151.291, -178.373, -0.332, 26.7)               # Conveyor 1 approach end
 		
 		self.get_logger().info("Setting bunsen_conv's status to True...")
 		self.bunsen_status_client.update_robot_status('bunsen_conv', True)         		# Ready at conveyor 1
@@ -347,13 +354,15 @@ class FanucActions(Node):
 		self.get_logger().info("Waiting for beaker_conv status to become False...")
 		self.bunsen_status_client.wait_for_specific_status('beaker_conv', True)         # Wait for ready at conveyor 1
 
-		self.cartMove(75.396, -831.926, -196.291, -178.373, -0.332, 26.7)               # Conveyor 1 pickup end
+		self.topicNode.label = "Picking up dice block at conveyor 1"
+
+		self.cartMove(55.396, -831.926, -196.291, -178.373, -0.332, 26.7)               # Conveyor 1 pickup end
 
 		self.topicNode.label = "Moving dice block from conveyor 1 to conveyor 2"
 		self.topicNode.withDice = True
 		self.schunkMove('close')
 
-		self.cartMove(75.396, -831.926, -92.912, -178.373, -0.332, 26.7)                # Conveyor 1 approach end
+		self.cartMove(55.396, -831.926, -92.912, -178.373, -0.332, 26.7)                # Conveyor 1 approach end
 		self.cartMove(757.469, -580.225, -92.912, 179.72, -0.016, 27.315)               # Conveyor 2 approach start
 		self.cartMove(765.349, -578.817, -197.217, -178.602, 2.568, 28.922)             # Conveyor 2 drop start
 
@@ -368,20 +377,20 @@ class FanucActions(Node):
 
 		self.topicNode.label = "Picking up dice block at conveyor 2"
 
-		#self.cartMove(79.57, -577.628, -92.912, -179.983, 0.628, 26.238)                # Conveyor 2 approach end
-		self.jointMove(-64.732, 20.007, -51.662, 3.396, -43.347, 90.833) #-89.167
+		self.cartMove(79.57, -577.628, -92.912, -179.9, 0.628, 26.238)                # Conveyor 2 approach end
+		#self.jointMove(-64.732, 20.007, -52.662, 3.396, -43.347, 90.833) #-89.167
 
 		# Wait for ready at conveyor 2
 
-		#self.cartMove(79.57, -577.628, -197.217, -179.983, 0.628, 26.238)               # Conveyor 2 pickup end
-		self.jointMove(-66.542, 22.921, -55.153, 0.066, -38.991, 94.762) #-85.238
+		self.cartMove(79.57, -577.628, -197.217, -179.9, 0.628, 26.238)               # Conveyor 2 pickup end
+		#self.jointMove(-66.542, 22.921, -54.153, 0.066, -38.991, 94.762) #-85.238
 
 		self.topicNode.withDice = True
 		self.schunkMove('close')
 
-		#self.cartMove(79.57, -577.628, -92.912, -179.983, 0.628, 26.238)                # Conveyor 2 approach end
+		self.cartMove(79.57, -577.628, -92.912, -179.9, 0.628, 26.238)                # Conveyor 2 approach end
 		#self.jointMove(-64.732, 20.007, -51.662, 3.396, -43.347, 90.833) #-89.167
-		self.jointMove(-67.273, 10.367, -42.081, 4.478, -49.211, 90.262)
+		#self.jointMove(-67.273, 10.367, -42.081, 4.478, -49.211, 90.262)
 
 		self.topicNode.label = "Dice block flip"
 
@@ -398,7 +407,7 @@ class FanucActions(Node):
 
 		#self.cartMove(363.496, 609.175, -83.366, 179.96, -6.23, 16.058)                 # Avoid table
 		self.jointMove(57.792, 11.879, -30.824, -9.696, -38.583, -63.616)
-		self.jointMove(109.054, 88.629, -98.042, -15.913, 7.339, -66.288)               # Dock 3 approach
+		self.jointMove(109.054, 88.629, -97.042, -15.913, 7.339, -66.288)               # Dock 3 approach
 
 		self.get_logger().info("Setting Bunsen's status to True...")
 		self.bunsen_status_client.update_robot_status('bunsen', True)                   
@@ -406,12 +415,14 @@ class FanucActions(Node):
 		self.get_logger().info("Waiting for roomba_base3's status to become True...")
 		self.bunsen_status_client.wait_for_specific_status('roomba_base3', True)		# Check create3 ready status
 
-		self.jointMove(109.056, 95.089, -97.762, -15.906, 6.841, -65.237)               # Dock 3 drop
+		self.topicNode.label = "Handing off dice block to roomba"
+
+		self.jointMove(109.056, 94.589, -96.262, -15.906, 6.841, -65.237)               # Dock 3 drop
 
 		self.topicNode.withDice = False
 		self.schunkMove('open')
 
-		self.jointMove(109.054, 88.629, -98.042, -15.913, 7.339, -66.288)               # Dock 3 approach
+		self.jointMove(109.054, 88.629, -97.042, -15.913, 7.339, -66.288)               # Dock 3 approach
 
 		self.get_logger().info("Setting Bunsen's status to False...")
 		self.bunsen_status_client.update_robot_status('bunsen', False)         			# Ready for create3 to leave dock 3
@@ -429,9 +440,17 @@ class FanucActions(Node):
 				self.topicNode.fault = "No dice block detected on conveyor"
 				print("No dice block detected on conveyor")
 				self.reportSender()
-				break
+				return
 			pass
 		self.convMove('stop')
+		if self.topicNode.beltSensorRear == False:
+			while self.topicNode.beltSensorRear == False:
+				self.convMove('reverse')
+				sleep(.25)
+				self.convMove('stop')
+			self.convMove('reverse')
+			sleep(.25)
+			self.convMove('stop')
 
 	def test(self):
 		#self.convMove('forward')
@@ -449,18 +468,28 @@ class FanucActions(Node):
 		#self.jointMove(-64.732, 20.007, -51.662, 3.396, -43.347, 90.833)
 
 
-def stop_all(exec,robot,rclpy):
+def stop_all(exec,robot1, robot2, rclpy):
 	while not brokerSender.stop_all_message :
 		pass
 	exec.shutdown()
-	robot.destroy_node()
+	robot1.destroy_node()
+	robot2.destroy_node()
 	rclpy.try_shutdown()
+
+def raise_exception(self):
+		thread_id = self.get_id()
+		res = ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id,
+			  ctypes.py_object(SystemExit))
+		print('1')
+		if res > 1:
+			ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, 0)
+			print('Exception raise failure')
 
 
 if __name__ == '__main__':
 	rclpy.init()
 	# Create our 6 nodes
-	exec = MultiThreadedExecutor(7)
+	exec = MultiThreadedExecutor(10)
 	
 	beaker_status_client = RobotClientNode('beaker')
 	bunsen_status_client = RobotClientNode('bunsen')
@@ -469,13 +498,13 @@ if __name__ == '__main__':
 	mainBeaker = FanucActions('beaker')
 	mainBunsen = FanucActions('bunsen')
 
-	'''broker_thread = threading.Thread(target=mqttc.loop_start)
+	broker_thread = threading.Thread(target=mqttc.loop_start)
 	broker_thread.start()
  
-	stop_threadBeaker = threading.Thread(target=stop_all,args=(exec,mainBeaker,rclpy))
-	stop_threadBeaker.start()
-	stop_threadBunsen = threading.Thread(target=stop_all,args=(exec,mainBunsen,rclpy))
-	stop_threadBunsen.start()'''
+	stop_thread = threading.Thread(target=stop_all,args=(exec,mainBeaker,mainBunsen,rclpy))
+	stop_thread.start()
+	# stop_threadBunsen = threading.Thread(target=stop_all,args=(exec,mainBunsen,rclpy))
+	# stop_threadBunsen.start()
 
 	# Add our nodes
 	exec.add_node(mainBeaker)
@@ -494,8 +523,24 @@ if __name__ == '__main__':
 	print("Ready")
 	
 	exec.spin()
+	beaker_status_client.destroy_node()
+	bunsen_status_client.destroy_node()
+	listenerBeaker.destroy_node()
+	listenerBunsen.destroy_node()
+	mainBeaker.destroy_node()
+	mainBunsen.destroy_node()
+	print('1111111111111111111111')
 	rclpy.shutdown()
+	print('2222222222222222222222')
 	exec.shutdown()
+	print('3333333333333333333333')
+	broker_thread.raise_exception()
+	broker_thread.join()
+	stop_thread.raise_exception()
+	stop_thread.join()
+	print('4444444444444444444444')
+	rclpy.try_shutdown()
+	print('5555555555555555555555')
 	'''try:
 		exec.spin()
 	except KeyboardInterrupt:

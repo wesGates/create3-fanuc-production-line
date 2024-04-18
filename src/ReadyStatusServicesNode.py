@@ -99,7 +99,7 @@ if __name__ == '__main__':
 
 	keycom = KeyCommander([
 		(KeyCode(char='c'), ready_status_services_node.display_statuses),
-		(KeyCode(char='r'), ready_status_services_node.reset_statuses),
+		(KeyCode(char='x'), ready_status_services_node.reset_statuses),
 
 	])
 	print(" Press 'c' to display the currently stored robot statuses within the publisher")
